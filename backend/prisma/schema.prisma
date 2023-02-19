@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id          Int           @id @default(autoincrement())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  avatarUrl   String?
+  username    String?
+  website     String?
+  company     String?
+  authorEmail String        @unique
+  isPublic    Boolean       @default(false)
+  posts       Post[]
+  experiences Experiences[]
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  type      PostType  @default(FUNNY)
+  title     String
+  content   String
+  published Boolean   @default(false)
+  viewCount Int       @default(0)
+  profileId Int
+  profile   Profile   @relation(fields: [profileId], references: [id])
+  comments  Comment[]
+  likes     Like[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  text      String
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  profileId Int
+  profile   Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  profileId Int
+  profile   Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Experiences {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  company     String
+  location    String
+  from        DateTime @db.Date
+  to          DateTime @db.Date
+  current     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profileId   Int
+  Profile     Profile  @relation(fields: [profileId], references: [id])
+}
+
+enum PostType {
+  FUNNY
+  TECH
+  RANDOM
+  NEWS
+  SERIOUS
+}
