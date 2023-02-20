@@ -1,39 +1,39 @@
-import { AddIcon } from "@chakra-ui/icons"
-import { Button, Card, CardBody, CardHeader, Flex, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useDisclosure, useToast } from "@chakra-ui/react"
+import { AddIcon } from "@chakra-ui/icons";
+import { Button, Card, CardBody, CardHeader, Flex, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useDisclosure, useToast } from "@chakra-ui/react";
 import moment from "moment";
-import { useEffect } from "react"
+import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useProfile } from "../../hooks/auth/useProfile";
-import { useAddExperience } from "../../hooks/profile/useAddExperience";
-import { useExperiences } from "../../hooks/profile/useExperience";
+import { useAddEducation } from "../../hooks/profile/useAddEducation";
+import { useEducations } from "../../hooks/profile/useEducation";
 import { useAuth } from "../../providers/AuthProvider";
-import { Experience } from "../../types/experience";
+import { Education } from "../../types/education";
 import { Empty } from "../shared/Empty";
 import { Loading } from "../shared/Loading";
 import { Result } from "../shared/Result";
 import AddModal from "../shared/AddModal";
 
 type FormValues = {
-    title: string;
+    school: string;
     description: string;
-    company: string;
-    location: string;
+    degree: string;
+    fieldOfStudy: string;
     from: Date
     to: Date;
     current: boolean
     profileId: number;
 };
 
-const ExperienceList = () => {
+const EducationList = () => {
     const { isOpen, onOpen, onClose } = useDisclosure()
     const toast = useToast();
-    const addExperience = useAddExperience();
-    const fields = ["title", "description", 'company', 'location'];
-    const dateFields = ['from', 'to']
-    const modalHeader = 'Add Experience';
+    const addEducation = useAddEducation();
     let { session } = useAuth();
     const { data: profile } = useProfile(session?.user.email);
-    const { data, isError, isLoading } = useExperiences(profile?.id);
+    const modalHeader = 'Add Education';
+    const dateFields = ['from', 'to']
+    const fields = ["school", "description", 'degree', 'fieldOfStudy'];
+    const { data, isError, isLoading } = useEducations(profile?.id);
 
     const {
         handleSubmit,
@@ -48,11 +48,11 @@ const ExperienceList = () => {
         if (profile) setValue('profileId', profile.id)
     }, [profile, setValue]);
 
-    const handleAddExperience: SubmitHandler<FormValues> = (experience) => {
-        addExperience.mutate(experience as Experience, {
+    const handleAddEducation: SubmitHandler<FormValues> = (education) => {
+        addEducation.mutate(education as Education, {
             onSuccess: () => {
                 toast({
-                    description: `experience has been added`,
+                    description: `education has been added`,
                     status: "success"
                 });
             },
@@ -88,7 +88,7 @@ const ExperienceList = () => {
         <>
             <AddModal
                 isOpen={isOpen}
-                submitHandler={handleSubmit(handleAddExperience)}
+                submitHandler={handleSubmit(handleAddEducation)}
                 onClose={onClose}
                 //reset={reset}
                 fields={fields}
@@ -102,7 +102,7 @@ const ExperienceList = () => {
                 <CardHeader>
                     <Flex>
                         <Flex flex='1' gap='4' alignItems='center' flexWrap='wrap'>
-                            <Text>Experiences</Text>
+                            <Text>Education</Text>
                         </Flex>
                         <Flex >
                             <Button onClick={onOpen} leftIcon={<AddIcon />}>Add</Button>
@@ -111,13 +111,13 @@ const ExperienceList = () => {
                 </CardHeader>
                 <CardBody>
                     {data?.length === 0 ? <>
-                        <Empty message="Experiences will show up here!" />
+                        <Empty message="Education will show up here!" />
                     </> : <>
                         <TableContainer>
                             <Table variant='simple'>
                                 <Thead>
                                     <Tr>
-                                        <Th>Title</Th>
+                                        <Th>School</Th>
                                         <Th>Description</Th>
                                         <Th>Company</Th>
                                         <Th>Location</Th>
@@ -126,14 +126,14 @@ const ExperienceList = () => {
                                     </Tr>
                                 </Thead>
                                 <Tbody>
-                                    {data?.map((experience) => (
-                                        <Tr key={experience.id}>
-                                            <Td>{experience.title}</Td>
-                                            <Td>{experience.description}</Td>
-                                            <Td>{experience.company}</Td>
-                                            <Td>{experience.location}</Td>
-                                            <Td>{moment(experience.from).format('l') + '-' + moment(experience.to).format('l')}</Td>
-                                            <Td>{experience.current ? '✅' : '❌'}</Td>
+                                    {data?.map((education) => (
+                                        <Tr key={education.id}>
+                                            <Td>{education.school}</Td>
+                                            <Td>{education.description}</Td>
+                                            <Td>{education.degree}</Td>
+                                            <Td>{education.fieldOfStudy}</Td>
+                                            <Td>{moment(education.from).format('l') + '-' + moment(education.to).format('l')}</Td>
+                                            <Td>{education.current ? '✅' : '❌'}</Td>
                                         </Tr>
                                     ))}
                                 </Tbody>
@@ -147,4 +147,4 @@ const ExperienceList = () => {
     )
 }
 
-export default ExperienceList
+export default EducationList

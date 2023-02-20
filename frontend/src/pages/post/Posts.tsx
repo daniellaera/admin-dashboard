@@ -36,10 +36,9 @@ export const Posts = () => {
 
   return (
     <Page animation="slideFade">
-      {data?.map(({ id, createdAt, title, viewCount, content, comments, likes, profile }: Post, i: number) => (
+      {data?.map(({ id, createdAt, title, content, comments, likes, profile }: Post, i: number) => (
         <Wrap spacing="30px" marginTop="5" key={i}>
           <WrapItem >
-
             <Box w="100%" >
               <Link to={`/posts/${id}`}>
                 <Heading fontSize="xl" marginTop="2">
@@ -68,7 +67,6 @@ export const Posts = () => {
                 </div>
               </Stack>
             </Box>
-
           </WrapItem>
           <Divider marginTop="5" />
         </Wrap>

@@ -7,6 +7,7 @@ const AddModal = ({
     reset,
     fields,
     dateFields,
+    modalHeader,
     errors,
     register,
     formState
@@ -25,13 +26,13 @@ const AddModal = ({
         >
             <ModalOverlay style={{ backdropFilter: "blur(4px)" }} />
             <ModalContent p={12} alignItems="center">
-                <ModalHeader p={4}>Add Experience</ModalHeader>
+                <ModalHeader p={4}>{modalHeader}</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody w="100%">
                     <Stack spacing={4} textAlign="center">
                         <form onSubmit={submitHandler}>
                             <Stack spacing={6}>
-                                {fields.map((field: any, index: any) => {
+                                {fields?.map((field: any, index: any) => {
                                     return (
                                         <FormControl
                                             key={`input-form-control-${index}`}
@@ -51,14 +52,13 @@ const AddModal = ({
                                         </FormControl>
                                     );
                                 })}
-                                {dateFields.map((field: any, index: any) => {
+                                {dateFields?.map((field: any, index: any) => {
                                     return (
                                         <FormControl
                                             key={`input-form-control-${index}`}
                                             isInvalid={Boolean(errors?.inputs?.[index])}
                                         >
                                             <Input
-
                                                 type={'date'}
                                                 name={`${field}`}
                                                 placeholder={field}

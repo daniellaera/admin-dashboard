@@ -24,6 +24,7 @@ model Profile {
   experiences Experiences[]
   comments    Comment[]
   likes       Like[]
+  educations  Education[]
 }
 
 model Post {
@@ -73,6 +74,21 @@ model Experiences {
   updatedAt   DateTime @updatedAt
   profileId   Int
   Profile     Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Education {
+  id           Int      @id @default(autoincrement())
+  school       String
+  description  String
+  degree       String
+  fieldOfStudy String
+  from         DateTime @db.Date
+  to           DateTime @db.Date
+  current      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  profileId    Int
+  Profile      Profile  @relation(fields: [profileId], references: [id])
 }
 
 enum PostType {

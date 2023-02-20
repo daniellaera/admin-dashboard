@@ -7,6 +7,7 @@ import profile from './profile';
 import experience from './experience';
 import comments from './comments';
 import like from './like';
+import education from './education';
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use('/profile', profile);
 router.use('/experience', experience);
 router.use('/comments', comments);
 router.use('/likes', like);
+router.use('/education', education);
 
 export default router;

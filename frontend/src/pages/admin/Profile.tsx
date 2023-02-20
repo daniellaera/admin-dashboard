@@ -1,6 +1,7 @@
 import { Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
 import { PasswordForm } from "../../components/auth/PasswordForm";
 import { ProfileForm } from "../../components/auth/ProfileForm";
+import EducationList from "../../components/profile/EducationList";
 import ExperienceList from "../../components/profile/ExperienceList";
 import { Page } from "../../components/shared/Page";
 import { Toolbar, ToolbarTitle } from "../../components/shared/Toolbar";
@@ -33,6 +34,7 @@ export default function Profile() {
         </CardBody>
       </Card>
       <ExperienceList />
+      <EducationList />
     </Page>
   );
 }
