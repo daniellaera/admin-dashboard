@@ -1,6 +1,12 @@
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { updateProfile } from "../../api/authApi";
 
 export function useUpdateProfile() {
-  return useMutation(updateProfile);
+  const queryClient = useQueryClient();
+
+  return useMutation(updateProfile, {
+    onSuccess: () => {
+      queryClient.invalidateQueries("profile");
+    }
+  });
 }

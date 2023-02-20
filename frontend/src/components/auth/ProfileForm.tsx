@@ -1,11 +1,8 @@
 import {
-  Avatar,
-  AvatarBadge,
   Button,
   Center,
   FormErrorMessage,
   Heading,
-  IconButton,
   Input,
   useToast
 } from "@chakra-ui/react";
@@ -21,15 +18,16 @@ import {
 } from "../shared/Form";
 import { useUpdateProfile } from "../../hooks/auth/useUpdateProfile";
 import { useAuth } from "../../providers/AuthProvider";
-import { SmallCloseIcon } from "@chakra-ui/icons";
 import { useProfile } from "../../hooks/auth/useProfile";
 import { Profile } from "../../types/profile";
+import CustomAvatar from "../shared/CustomAvatar";
 
 type FormValues = {
   username: string;
   company: string;
   website: string;
   id: number;
+  avatarUrl: string
 };
 
 function ProfileForm() {
@@ -37,6 +35,9 @@ function ProfileForm() {
   const updateProfile = useUpdateProfile();
   const { session } = useAuth();
   const { data: profile } = useProfile(session?.user.email);
+
+  const size = '96px';
+  const color = 'teal';
 
   const {
     handleSubmit,
@@ -72,6 +73,10 @@ function ProfileForm() {
     });
   };
 
+  function handleAvatar(url: string) {
+    setValue('avatarUrl', url)
+  }
+
   return (
     <Form onSubmit={handleSubmit(handleUpdateProfile)}>
       <FormHeader>
@@ -81,19 +86,13 @@ function ProfileForm() {
       </FormHeader>
       <FormLine id="userName">
         <FormLineLabel>User Icon</FormLineLabel>
-        <Avatar size="xl" src="https://100k-faces.glitch.me/random-image">
-          <AvatarBadge
-            as={IconButton}
-            size="sm"
-            rounded="full"
-            top="-10px"
-            colorScheme="red"
-            aria-label="remove Image"
-            icon={<SmallCloseIcon />}
-          />
-        </Avatar>
+        <CustomAvatar size={size} color={color} url={profile?.avatarUrl} onUpload={(url: string) => {
+          handleAvatar(url);
+        }} />
         <Center>
-          <Button>Change Avatar</Button>
+          <Button><label className="button primary block" htmlFor="avatarUrl">
+            {`Upload`}
+          </label></Button>
         </Center>
       </FormLine>
       <FormLine isInvalid={!!errors.username}>

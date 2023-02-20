@@ -32,7 +32,7 @@ router.post('/create', async (req, res) => {
 
 router.put('/updateById/:profileId', async (req, res) => {
   const { profileId } = req.params;
-  const { username, website, company } = req.body;
+  const { username, website, company, avatarUrl } = req.body;
 
   // then we repopulate programmingLanguages
   const profileUpdated = await prisma.profile.update({
@@ -41,6 +41,7 @@ router.put('/updateById/:profileId', async (req, res) => {
       username: username,
       website: website,
       company: company,
+      avatarUrl: avatarUrl,
     },
   });
 

@@ -15,3 +15,9 @@ if you want to add new fields in your schema and apply migrations to your local/
 
 test app container image, ex: backend
 `cd backend & docker build -t test-backend .` then > `docker run -p 8080:8080 -d test-backend`
+
+create custom Prisma migration script and edit: `npx prisma migrate dev --create-only`
+
+the modify the created.sql with your custom sql script
+
+then apply migrations with DATABASE_URL connected to your supabase service: `npx prisma migrate deploy`
