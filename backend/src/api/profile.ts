@@ -11,6 +11,12 @@ router.get('/findProfileByEmail/:authorEmail', async (req, res) => {
       where: { authorEmail },
       include: {
         experiences: true,
+        programmingLanguages: {
+          select: {
+            value: true,
+            label: true,
+          },
+        },
       },
     });
     res.json(profile);
@@ -32,16 +38,26 @@ router.post('/create', async (req, res) => {
 
 router.put('/updateById/:profileId', async (req, res) => {
   const { profileId } = req.params;
-  const { username, website, company, avatarUrl } = req.body;
+  const { username, website, company, avatarUrl, programmingLanguages } = req.body;
 
-  // then we repopulate programmingLanguages
+  // we delete all programming languages first
+  await prisma.$transaction([prisma.programmingLanguage.deleteMany({ where: { profileId: Number(profileId) } })]);
+
+  // then we repopulate all table while we update the profile
   const profileUpdated = await prisma.profile.update({
     where: { id: Number(profileId) },
+   
     data: {
       username: username,
       website: website,
       company: company,
       avatarUrl: avatarUrl,
+      programmingLanguages: {
+        connectOrCreate: programmingLanguages.map((value: string, id:number) => ({
+          create: value,
+          where: { id: id },
+        })),
+      },
     },
   });
 

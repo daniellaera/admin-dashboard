@@ -1,4 +1,5 @@
 import { Experience } from "./experience"
+import { ProgrammingLanguage } from "./programmingLanguage"
 
 export type Profile = {
   id: number
@@ -11,4 +12,5 @@ export type Profile = {
   authorEmail: string
   isPublic?: boolean;
   experiences?: Experience[]
+  programmingLanguages?: ProgrammingLanguage[]
 }

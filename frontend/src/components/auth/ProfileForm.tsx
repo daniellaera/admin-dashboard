@@ -1,13 +1,15 @@
 import {
   Button,
   Center,
+  FormControl,
   FormErrorMessage,
+  FormLabel,
   Heading,
   Input,
   useToast
 } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
   Form,
   FormFooter,
@@ -21,6 +23,8 @@ import { useAuth } from "../../providers/AuthProvider";
 import { useProfile } from "../../hooks/auth/useProfile";
 import { Profile } from "../../types/profile";
 import CustomAvatar from "../shared/CustomAvatar";
+import { Select } from "chakra-react-select";
+import { ProgrammingLanguage, programmingLanguages } from "../../types/programmingLanguage";
 
 type FormValues = {
   username: string;
@@ -28,6 +32,7 @@ type FormValues = {
   website: string;
   id: number;
   avatarUrl: string
+  programmingLanguages: ProgrammingLanguage[];
 };
 
 function ProfileForm() {
@@ -44,6 +49,7 @@ function ProfileForm() {
     register,
     setValue,
     reset,
+    control,
     formState: { errors }
   } = useForm<FormValues>();
 
@@ -140,6 +146,30 @@ function ProfileForm() {
           </FormErrorMessage>
         </FormLineField>
       </FormLine>
+      <Controller
+        control={control}
+        name="programmingLanguages"
+        render={({
+          field: { onChange, onBlur, value, name, ref },
+          fieldState: { error }
+        }) => (
+          <FormControl py={4} isInvalid={!!error} id='programmingLanguages'>
+            <FormLabel>Programming Languages</FormLabel>
+            <Select
+              isMulti
+              name={name}
+              ref={ref}
+              onChange={onChange}
+              onBlur={onBlur}
+              value={value}
+              options={programmingLanguages}
+              placeholder="Food Groups"
+              closeMenuOnSelect={false}
+            />
+            <FormErrorMessage>{error && error.message}</FormErrorMessage>
+          </FormControl>
+        )}
+      />
       <FormFooter>
         <Button
           colorScheme="blue"

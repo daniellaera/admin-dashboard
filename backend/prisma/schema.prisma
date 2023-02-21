@@ -11,20 +11,31 @@ datasource db {
 }
 
 model Profile {
-  id          Int           @id @default(autoincrement())
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  avatarUrl   String?
-  username    String?
-  website     String?
-  company     String?
-  authorEmail String        @unique
-  isPublic    Boolean       @default(false)
-  posts       Post[]
-  experiences Experiences[]
-  comments    Comment[]
-  likes       Like[]
-  educations  Education[]
+  id                   Int                   @id @default(autoincrement())
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  avatarUrl            String?
+  username             String?
+  website              String?
+  company              String?
+  authorEmail          String                @unique
+  isPublic             Boolean               @default(false)
+  posts                Post[]
+  experiences          Experiences[]
+  comments             Comment[]
+  likes                Like[]
+  educations           Education[]
+  programmingLanguages ProgrammingLanguage[]
+}
+
+model ProgrammingLanguage {
+  id        Int      @id @default(autoincrement())
+  value     String
+  label     String
+  profileId Int
+  Profile   Profile  @relation(fields: [profileId], references: [id])
+
+  @@unique([id])
 }
 
 model Post {

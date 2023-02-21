@@ -13,6 +13,8 @@ if you want to add new fields in your schema and apply migrations to your local/
 - execute new migrations
 `npx prisma migrate deploy`
 
+- otherwise remove the migration last row in _migration table in supabase and push directly with `npx prisma migrate dev --name add_progr_languages` for example
+
 test app container image, ex: backend
 `cd backend & docker build -t test-backend .` then > `docker run -p 8080:8080 -d test-backend`
 
