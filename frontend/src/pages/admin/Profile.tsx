@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
+import DangerZone from "../../components/auth/DangerZone";
 import { PasswordForm } from "../../components/auth/PasswordForm";
 import { ProfileForm } from "../../components/auth/ProfileForm";
 import EducationList from "../../components/profile/EducationList";
@@ -21,6 +22,7 @@ export default function Profile() {
             <TabList>
               <Tab>Profile</Tab>
               <Tab>Password</Tab>
+              <Tab _selected={{ color: 'white', bg: 'red.400' }}>Danger Zone</Tab>
             </TabList>
             <TabPanels mt="10">
               <TabPanel p="0">
@@ -28,6 +30,9 @@ export default function Profile() {
               </TabPanel>
               <TabPanel p="0">
                 <PasswordForm />
+              </TabPanel>
+              <TabPanel p="0">
+                <DangerZone />
               </TabPanel>
             </TabPanels>
           </Tabs>

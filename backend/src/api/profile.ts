@@ -1,4 +1,5 @@
 import express from 'express';
+import { supabaseClient } from '../config/supabase-client';
 import prisma from '../lib/prisma';
 
 const router = express.Router();
@@ -36,6 +37,26 @@ router.post('/create', async (req, res) => {
   res.json(result);
 });
 
+router.delete('/delete/:profileId', async (req, res) => {
+  const { profileId } = req.params;
+
+  // get the accessToken Authorization Bearer
+  const token = req.header('Authorization')?.split(' ')[1];
+
+  // retrieve the user with the access token
+  const { data } = await supabaseClient.auth.getUser(token);
+  //const userId: string | undefined = user?.id;
+
+  const result = await prisma.profile.delete({ where: { id: Number(profileId) } });
+
+  console.log('deleting user from DB', result);
+  
+  await supabaseClient.auth.admin.deleteUser(data.user?.id!);
+  
+  console.log('deleting user from supabase with id', data.user?.id);
+  res.json(result);
+});
+
 router.put('/updateById/:profileId', async (req, res) => {
   const { profileId } = req.params;
   const { username, website, company, avatarUrl, programmingLanguages } = req.body;
@@ -46,14 +67,14 @@ router.put('/updateById/:profileId', async (req, res) => {
   // then we repopulate all table while we update the profile
   const profileUpdated = await prisma.profile.update({
     where: { id: Number(profileId) },
-   
+
     data: {
       username: username,
       website: website,
       company: company,
       avatarUrl: avatarUrl,
       programmingLanguages: {
-        connectOrCreate: programmingLanguages.map((value: string, id:number) => ({
+        connectOrCreate: programmingLanguages.map((value: string, id: number) => ({
           create: value,
           where: { id: id },
         })),

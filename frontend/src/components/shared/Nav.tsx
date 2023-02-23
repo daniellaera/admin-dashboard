@@ -69,7 +69,7 @@ const Nav = () => {
               <LinkButton to="/login" variant="ghost">
                 Login
               </LinkButton>
-              <LinkButton to="/signup" variant="solid" colorScheme="purple">
+              <LinkButton to="/signup" variant="solid" colorScheme="blue">
                 Register
               </LinkButton>
               <DarkModeSwitch />
@@ -93,7 +93,6 @@ const Nav = () => {
                   boxSize="35px"
                   bg="purple.50"
                   src='https://100k-faces.glitch.me/random-image'
-
                 />
               ) : (
                 <c.Box as={GiHamburgerMenu} />
@@ -107,11 +106,9 @@ const Nav = () => {
                 <Link to="/admin/profile">
                   <c.MenuItem icon={<c.Box as={BiUser} boxSize="16px" />}>Profile</c.MenuItem>
                 </Link>
-
                 <Link to="/admin">
                   <c.MenuItem icon={<c.Box as={BiCog} boxSize="16px" />}>Admin</c.MenuItem>
                 </Link>
-
                 <c.MenuDivider />
                 <c.MenuItem
                   closeOnSelect={false}

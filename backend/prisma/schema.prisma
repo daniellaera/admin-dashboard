@@ -33,7 +33,7 @@ model ProgrammingLanguage {
   value     String
   label     String
   profileId Int
-  Profile   Profile  @relation(fields: [profileId], references: [id])
+  Profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([id])
 }
@@ -48,7 +48,7 @@ model Post {
   published Boolean   @default(false)
   viewCount Int       @default(0)
   profileId Int
-  profile   Profile   @relation(fields: [profileId], references: [id])
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
 }
@@ -60,7 +60,7 @@ model Comment {
   postId    Int
   post      Post     @relation(fields: [postId], references: [id])
   profileId Int
-  profile   Profile  @relation(fields: [profileId], references: [id])
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 model Like {
@@ -69,7 +69,7 @@ model Like {
   postId    Int
   post      Post     @relation(fields: [postId], references: [id])
   profileId Int
-  profile   Profile  @relation(fields: [profileId], references: [id])
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 model Experiences {
@@ -84,7 +84,7 @@ model Experiences {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   profileId   Int
-  Profile     Profile  @relation(fields: [profileId], references: [id])
+  Profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 model Education {
@@ -99,7 +99,7 @@ model Education {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   profileId    Int
-  Profile      Profile  @relation(fields: [profileId], references: [id])
+  Profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 enum PostType {

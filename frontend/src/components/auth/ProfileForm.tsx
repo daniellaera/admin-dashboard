@@ -71,8 +71,7 @@ function ProfileForm() {
       },
       onError: () => {
         toast({
-          description:
-            "Something went wrong! If the problem persists, contact us!",
+          description: "Something went wrong! If the problem persists, contact us!",
           status: "error"
         });
       }
@@ -163,7 +162,7 @@ function ProfileForm() {
               onBlur={onBlur}
               value={value}
               options={programmingLanguages}
-              placeholder="Food Groups"
+              placeholder="Pick programming languages"
               closeMenuOnSelect={false}
             />
             <FormErrorMessage>{error && error.message}</FormErrorMessage>

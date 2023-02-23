@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^4.10.1",
+    "@supabase/supabase-js": "^2.8.0",
     "cors": "^2.8.5",
     "date-fns": "^2.29.3",
     "dotenv": "^16.0.3",

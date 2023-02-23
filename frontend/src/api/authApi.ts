@@ -63,6 +63,14 @@ export async function updateProfile(profile: Profile) {
   return data;
 }
 
+export async function deleteProfileById(id: number): Promise<Profile> {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  const { data } = await axios.delete(`${profileUrl}/delete/${id}`, {
+    headers: { Authorization: `token ${session?.access_token}` }
+  });
+  return data;
+}
 
 export async function fetchProfileByEmail(email: string): Promise<Profile> {
   const { data } = await axios.get(`${profileUrl}/findProfileByEmail/${email}`);
