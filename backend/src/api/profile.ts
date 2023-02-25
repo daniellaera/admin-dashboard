@@ -37,15 +37,23 @@ router.post('/create', async (req, res) => {
   res.json(result);
 });
 
+router.post('/createProfileBySocial/:email', async (req, res) => {
+  const { email } = req.params;
+
+  const result = await prisma.profile.create({
+    data: {
+      authorEmail: email,
+    },
+  });
+  res.json(result);
+});
+
 router.delete('/delete/:profileId', async (req, res) => {
   const { profileId } = req.params;
 
-  // get the accessToken Authorization Bearer
   const token = req.header('Authorization')?.split(' ')[1];
 
-  // retrieve the user with the access token
   const { data } = await supabaseClient.auth.getUser(token);
-  //const userId: string | undefined = user?.id;
 
   const result = await prisma.profile.delete({ where: { id: Number(profileId) } });
 
@@ -54,6 +62,7 @@ router.delete('/delete/:profileId', async (req, res) => {
   await supabaseClient.auth.admin.deleteUser(data.user?.id!);
   
   console.log('deleting user from supabase with id', data.user?.id);
+
   res.json(result);
 });
 

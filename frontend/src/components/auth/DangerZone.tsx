@@ -24,7 +24,7 @@ const DangerZone = () => {
     const toast = useToast();
     const navigate = useNavigate();
     const deleteProfile = useDeleteProfile();
-    const { session } = useAuth();
+    const { session, signOut } = useAuth();
     const { data: profile } = useProfile(session?.user.email);
 
     const handleRemoveProfile = (profileId: number) => {
@@ -35,7 +35,8 @@ const DangerZone = () => {
                     description: "Your profile has been deleted",
                     status: "success"
                 });
-                navigate("/login");
+                signOut();
+                navigate("/signin");
             },
             onError: () => {
                 toast({

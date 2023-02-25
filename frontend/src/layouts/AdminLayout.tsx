@@ -43,7 +43,7 @@ function AdminLayout() {
           </Stack>
         </AppShellSidebarBody>
         <AppShellSidebarFooter>
-          <Stack spacing={4}>
+          <Stack spacing={4} mb='5'>
             <Button
               as={NavLink}
               justifyContent="left"
@@ -53,8 +53,8 @@ function AdminLayout() {
             >
               Home Page
             </Button>
-            <ProfileMenu />
           </Stack>
+          <ProfileMenu />
         </AppShellSidebarFooter>
       </AppShellSidebar>
       <AppShellContent>

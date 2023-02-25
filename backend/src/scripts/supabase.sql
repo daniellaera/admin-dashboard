@@ -12,3 +12,11 @@ create policy "Anyone can upload an avatar." on storage.objects
 grant usage on schema public to postgres, anon, authenticated, service_role;
 
 grant all privileges on all tables in schema public to postgres, anon, authenticated, service_role;
+
+-- https://github.com/supabase/storage-api/issues/65
+alter table storage.objects
+drop constraint objects_owner_fkey,
+add constraint objects_owner_fkey
+   foreign key (owner)
+   references auth.users(id)
+   on delete set null;

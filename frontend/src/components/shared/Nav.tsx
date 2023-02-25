@@ -3,15 +3,17 @@ import { GiHamburgerMenu } from "react-icons/gi"
 import * as c from "@chakra-ui/react"
 import { Limiter } from "./Limiter"
 import { LinkButton } from "./LinkButton"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useProfile } from "../../hooks/auth/useProfile";
 import { useAuth } from "../../providers/AuthProvider";
 import { DarkModeSwitch } from "./DarkModeSwitch"
 import { useSignOut } from "../../hooks/auth/useSignOut"
 import { useToast } from "@chakra-ui/react"
+import ProfileAvatar from "./ProfileAvatar"
+import { truncate } from "../../utils/functions"
 
 const Nav = () => {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const { colorMode, toggleColorMode } = c.useColorMode()
   const isDark = colorMode === "dark"
   const { session } = useAuth();
@@ -22,7 +24,7 @@ const Nav = () => {
   const handleSignOut = () => {
     signOut.mutate(undefined, {
       onSuccess: () => {
-        navigate("/login");
+        //navigate("/login");
       },
       onError: () => {
         toast({
@@ -63,13 +65,13 @@ const Nav = () => {
 
         {/* Right link list */}
 
-        {!profile && (
+        {!session && (
           <c.Fade in>
             <c.HStack spacing={4} display={{ base: "none", md: "flex" }}>
-              <LinkButton to="/login" variant="ghost">
+              <LinkButton to="/signin" variant="ghost">
                 Login
               </LinkButton>
-              <LinkButton to="/signup" variant="solid" colorScheme="blue">
+              <LinkButton to="/signin" variant="solid" colorScheme="blue">
                 Register
               </LinkButton>
               <DarkModeSwitch />
@@ -81,19 +83,13 @@ const Nav = () => {
         <c.Menu placement="bottom-end" closeOnSelect closeOnBlur>
           <c.MenuButton
             as={c.IconButton}
-            display={{ base: "flex", md: profile ? "flex" : "none" }}
+            display={{ base: "flex", md: session ? "flex" : "none" }}
             p={0}
-            colorScheme={profile ? "gray" : undefined}
+            colorScheme={session ? "gray" : undefined}
             borderRadius="full"
             icon={
-              profile ? (
-                <c.Avatar
-                  size="sm"
-                  color="black"
-                  boxSize="35px"
-                  bg="purple.50"
-                  src='https://100k-faces.glitch.me/random-image'
-                />
+              session ? (
+                <ProfileAvatar avatarSize="sm" url={profile?.avatarUrl} avatarName={truncate(session?.user?.email!)} />
               ) : (
                 <c.Box as={GiHamburgerMenu} />
               )
@@ -101,7 +97,7 @@ const Nav = () => {
           />
 
           <c.MenuList fontSize="md">
-            {profile ? (
+            {session ? (
               <>
                 <Link to="/admin/profile">
                   <c.MenuItem icon={<c.Box as={BiUser} boxSize="16px" />}>Profile</c.MenuItem>
@@ -136,10 +132,10 @@ const Nav = () => {
                   Toggle theme
                 </c.MenuItem>
                 <c.MenuDivider />
-                <Link to="/login">
+                <Link to="/signin">
                   <c.MenuItem>Login</c.MenuItem>
                 </Link>
-                <Link to="/register">
+                <Link to="/signin">
                   <c.MenuItem fontWeight="semibold">Register</c.MenuItem>
                 </Link>
               </>

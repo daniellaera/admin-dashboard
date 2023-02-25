@@ -1,13 +1,12 @@
-import { ArrowUpDownIcon } from "@chakra-ui/icons";
 import {
-  Avatar,
   Box,
-  Button,
   Flex,
+  IconButton,
   Menu,
   MenuButton,
   MenuItem,
   MenuList,
+  Stack,
   Text,
   useToast
 } from "@chakra-ui/react";
@@ -15,6 +14,8 @@ import { useNavigate } from "react-router-dom";
 import { useProfile } from "../../hooks/auth/useProfile";
 import { useSignOut } from "../../hooks/auth/useSignOut";
 import { useAuth } from "../../providers/AuthProvider";
+import { truncate } from "../../utils/functions";
+import ProfileAvatar from "../shared/ProfileAvatar";
 
 function ProfileMenu() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ function ProfileMenu() {
   const handleSignOut = () => {
     signOut.mutate(undefined, {
       onSuccess: () => {
-        navigate("/login");
+        navigate("/signin");
       },
       onError: () => {
         toast({
@@ -39,19 +40,23 @@ function ProfileMenu() {
   };
 
   return (
-    <Menu>
-      <MenuButton
-        as={Button}
-        isLoading={signOut.isLoading}
-        height="fit-content"
-        loadingText="Signing out..."
-        py="4"
-        rightIcon={<ArrowUpDownIcon fontSize="sm" />}
-        textAlign="left"
-        variant="outline"
-      >
-        <Flex align="center">
-          <Avatar mr={3} size="sm" />
+    <Stack>
+      <Box px={4} mb='8' border={'1px solid gray'} borderRadius='2xl'>
+        <Flex alignItems={'center'}>
+          <Menu placement="bottom-end" closeOnSelect closeOnBlur>
+            <MenuButton
+              py="4"
+              as={IconButton}
+              rounded={'full'}
+              variant={'link'}
+              cursor={'pointer'}
+            >
+              <ProfileAvatar mr="3" avatarSize="sm" url={profile?.avatarUrl} avatarName={truncate(user?.email!)} />
+            </MenuButton>
+            <MenuList>
+              <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
+            </MenuList>
+          </Menu>
           <Box>
             <Text fontSize="sm" fontWeight="medium">
               {profile?.username ? profile.username : ''}
@@ -61,11 +66,8 @@ function ProfileMenu() {
             </Text>
           </Box>
         </Flex>
-      </MenuButton>
-      <MenuList>
-        <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
-      </MenuList>
-    </Menu>
+      </Box>
+    </Stack>
   );
 }
 

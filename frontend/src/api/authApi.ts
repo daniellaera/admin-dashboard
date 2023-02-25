@@ -31,6 +31,22 @@ export async function fetchAuthUser(): Promise<AuthUser> {
   return () => window.removeEventListener("AuthStateChange", cb);
 } */
 
+export async function signInWithOAuth() {
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'github',
+  });
+  if (error) throw error;
+}
+
+export async function signInWithMagicLink(email: string) {
+  const { error } = await supabaseClient.auth.signInWithOtp({ email });
+  if (error) throw error;
+  const data: Omit<Profile, 'id'> = {
+    authorEmail: email
+  }
+  await addProfile(data)
+}
+
 export async function signInWithEmailAndPassword(email: string, password: string) {
   const { error } = await supabaseClient.auth.signInWithPassword({
     email,
@@ -51,6 +67,17 @@ export const signUpWithEmailAndPassword = async (email: string, password: string
     authorEmail: email
   }
   await addProfile(data)
+}
+
+export async function createOrVerifyProfile(email: string): Promise<Profile> {
+  const { data: existingProfile } = await axios.get(`${profileUrl}/findProfileByEmail/${email}`);
+
+  if (existingProfile) {
+    return existingProfile
+  } else {
+    await axios.post(`${profileUrl}/createProfileBySocial/${email}`);
+    return existingProfile
+  }
 }
 
 export async function addProfile(profile: Omit<Profile, 'id'>): Promise<Profile> {
