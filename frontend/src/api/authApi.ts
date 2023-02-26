@@ -53,8 +53,6 @@ export async function signInWithEmailAndPassword(email: string, password: string
     password,
   })
   if (error) throw error;
-  //const event = new CustomEvent("AuthStateChange", { detail: error });
-  //window.dispatchEvent(event);
 }
 
 export const signUpWithEmailAndPassword = async (email: string, password: string) => {
@@ -70,14 +68,7 @@ export const signUpWithEmailAndPassword = async (email: string, password: string
 }
 
 export async function createOrVerifyProfile(email: string): Promise<Profile> {
-  const { data: existingProfile } = await axios.get(`${profileUrl}/findProfileByEmail/${email}`);
-
-  if (existingProfile) {
-    return existingProfile
-  } else {
-    await axios.post(`${profileUrl}/createProfileBySocial/${email}`);
-    return existingProfile
-  }
+  return await axios.post(`${profileUrl}/createProfileBySocial/${email}`);
 }
 
 export async function addProfile(profile: Omit<Profile, 'id'>): Promise<Profile> {
@@ -105,13 +96,6 @@ export async function fetchProfileByEmail(email: string): Promise<Profile> {
 }
 
 export async function signOut() {
-  /* return new Promise((resolve) => {
-    setTimeout(() => {
-      const event = new CustomEvent("AuthStateChange", { detail: undefined });
-      window.dispatchEvent(event);
-      resolve(true);
-    }, 2000);
-  }); */
   const { error } = await supabaseClient.auth.signOut()
   if (error) throw error;
 }

@@ -40,12 +40,25 @@ router.post('/create', async (req, res) => {
 router.post('/createProfileBySocial/:email', async (req, res) => {
   const { email } = req.params;
 
-  const result = await prisma.profile.create({
-    data: {
-      authorEmail: email,
-    },
-  });
-  res.json(result);
+  try {
+    const existingProfile = await prisma.profile.findFirst({
+      where: { authorEmail: email },
+    });
+    if (existingProfile) {
+      console.log('profile exists');
+      res.status(200).json(existingProfile);
+    } else {
+      const result = await prisma.profile.create({
+        data: {
+          authorEmail: email,
+        },
+      });
+      res.status(200).json(result);
+      console.log('profile created', result);
+    }
+  } catch (error) {
+    return res.status(400).json({ error: 'Unauthorized' });
+  }
 });
 
 router.delete('/delete/:profileId', async (req, res) => {
@@ -58,9 +71,9 @@ router.delete('/delete/:profileId', async (req, res) => {
   const result = await prisma.profile.delete({ where: { id: Number(profileId) } });
 
   console.log('deleting user from DB', result);
-  
+
   await supabaseClient.auth.admin.deleteUser(data.user?.id!);
-  
+
   console.log('deleting user from supabase with id', data.user?.id);
 
   res.json(result);

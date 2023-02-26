@@ -16,13 +16,11 @@ import { useRef } from "react";
 import { useDeleteProfile } from "../../hooks/auth/useDeleteProfile";
 import { useAuth } from "../../providers/AuthProvider";
 import { useProfile } from "../../hooks/auth/useProfile";
-import { useNavigate } from "react-router-dom";
 
 const DangerZone = () => {
     const { isOpen, onClose, onOpen } = useDisclosure();
     const cancelRef = useRef(null);
     const toast = useToast();
-    const navigate = useNavigate();
     const deleteProfile = useDeleteProfile();
     const { session, signOut } = useAuth();
     const { data: profile } = useProfile(session?.user.email);
@@ -36,7 +34,6 @@ const DangerZone = () => {
                     status: "success"
                 });
                 signOut();
-                navigate("/signin");
             },
             onError: () => {
                 toast({

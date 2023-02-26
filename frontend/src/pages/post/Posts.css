@@ -1,8 +1,8 @@
 .button__badge {
     position: relative;
-    top: -10px;
     left: 10px;
     border-radius: 3px;
     padding: 1px 3px;
     font: 10px Verdana;
+    z-index: 1;
   }

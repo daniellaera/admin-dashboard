@@ -41,11 +41,11 @@ function LikeButton({ postId }: LikeButtonProps) {
                     status: "success"
                 });
             },
-            onError: () => {
+            onError: (error: any) => {
                 toast({
-                    description:
-                        "Something went wrong! If the problem persists, contact us!",
-                    status: "error"
+                    position: 'top',
+                    description: `${error.message.response.data.error}`,
+                    status: "warning"
                 });
             }
         });
