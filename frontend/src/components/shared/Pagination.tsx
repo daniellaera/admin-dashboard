@@ -43,14 +43,14 @@ function Pagination({
       <Text>{`${startIndex}–${lastIndex} of ${total}`}</Text>
       <Stack direction="row" spacing={4}>
         <Button
-          disabled={prevDisabled}
+          isDisabled={prevDisabled}
           onClick={() => onPageChange(pageIndex - 1)}
           variant="outline"
         >
           Previous
         </Button>
         <Button
-          disabled={nextDisabled}
+          isDisabled={nextDisabled}
           onClick={() => onPageChange(pageIndex + 1)}
           variant="outline"
         >

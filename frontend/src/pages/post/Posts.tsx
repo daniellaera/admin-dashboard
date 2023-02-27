@@ -12,10 +12,19 @@ import { Post } from "../../types/post";
 import './Posts.css';
 import { LikeButton } from "../../components/shared/LikeButton";
 import { getRandomColor } from "../../utils/functions";
+import { Pagination } from "../../components/shared/Pagination";
+import { useMemo, useState } from "react";
+
+const pageSize = 5;
 
 export const Posts = () => {
   const { data, isError, isLoading } = usePosts();
   const navigate = useNavigate();
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const posts = useMemo(() => {
+    return data?.slice(pageIndex * pageSize, pageIndex * pageSize + pageSize);
+  }, [data, pageIndex]);
 
   if (data?.length === 0) {
     return <Empty message="Posts will show up here!" />
@@ -35,9 +44,13 @@ export const Posts = () => {
     );
   }
 
+  function handlePageChange(newPageIndex: number) {
+    setPageIndex(newPageIndex);
+  }
+
   return (
     <Page animation="slideFade">
-      {data?.map(({ id, createdAt, title, content, comments, likes, profile, type }: Post, i: number) => (
+      {posts?.map(({ id, createdAt, title, content, comments, likes, profile, type }: Post, i: number) => (
         <Wrap spacing="30px" marginTop="5" key={i}>
           <WrapItem >
             <Box w="100%" >
@@ -77,6 +90,14 @@ export const Posts = () => {
           <Divider marginTop="5" />
         </Wrap>
       ))}
+      <Stack mt={4}>
+        <Pagination
+          onPageChange={handlePageChange}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          total={data?.length!}
+        />
+      </Stack>
     </Page>
   )
 }
