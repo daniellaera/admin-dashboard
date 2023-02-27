@@ -76,11 +76,11 @@ export default function Home() {
             mt="10"
             spacing={4}
           >
-            <Button as={Link} size="lg" to="/admin">
-              Documentation
+            <Button as={Link} size="lg" to="/developers">
+              Developers
             </Button>
             <Button as={Link} colorScheme="blue" size="lg" to="/admin">
-              Live preview
+              Dashboard
             </Button>
           </Stack>
           <Box pos="relative" mt="20">

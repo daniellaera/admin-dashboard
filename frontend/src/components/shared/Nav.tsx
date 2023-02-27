@@ -8,9 +8,10 @@ import { useProfile } from "../../hooks/auth/useProfile";
 import { useAuth } from "../../providers/AuthProvider";
 import { DarkModeSwitch } from "./DarkModeSwitch"
 import { useSignOut } from "../../hooks/auth/useSignOut"
-import { useToast } from "@chakra-ui/react"
+import { Box, Flex, HStack, IconButton, Menu, MenuButton, Text, Tooltip, useToast, VStack } from "@chakra-ui/react"
 import ProfileAvatar from "./ProfileAvatar"
 import { truncate } from "../../utils/functions"
+import { FiBell, FiChevronDown } from "react-icons/fi"
 
 const Nav = () => {
   //const navigate = useNavigate();
@@ -79,70 +80,93 @@ const Nav = () => {
             </c.HStack>
           </c.Fade>
         )}
-
-        {/* Right menu list */}
-        <c.Menu placement="bottom-end" closeOnSelect closeOnBlur>
-          <c.MenuButton
-            as={c.IconButton}
-            display={{ base: "flex", md: session ? "flex" : "none" }}
-            p={0}
-            colorScheme={session ? "gray" : undefined}
-            borderRadius="full"
-            icon={
-              session ? (
-                <ProfileAvatar avatarSize="sm" url={profile?.avatarUrl} avatarName={truncate(session?.user?.email!)} />
-              ) : (
-                <c.Box as={GiHamburgerMenu} />
-              )
-            }
-          />
-
-          <c.MenuList fontSize="md">
-            {session ? (
-              <>
-                <Link to="/admin/profile">
-                  <c.MenuItem icon={<c.Box as={BiUser} boxSize="16px" />}>Profile</c.MenuItem>
-                </Link>
-                <Link to="/admin">
-                  <c.MenuItem icon={<c.Box as={BiCog} boxSize="16px" />}>Admin</c.MenuItem>
-                </Link>
-                <c.MenuDivider />
-                <c.MenuItem
-                  closeOnSelect={false}
-                  icon={<c.Box as={isDark ? BiSun : BiMoon} boxSize="16px" />}
-                  onClick={toggleColorMode}
-                >
-                  Toggle theme
-                </c.MenuItem>
-                <c.MenuDivider />
-
-                <c.MenuItem
-                  onClick={handleSignOut}
-                  icon={<c.Box as={BiExit} boxSize="16px" />}
-                >
-                  Logout
-                </c.MenuItem>
-              </>
-            ) : (
-              <>
-                <c.MenuItem
-                  closeOnSelect={false}
-                  icon={<c.Box as={isDark ? BiSun : BiMoon} boxSize="16px" />}
-                  onClick={toggleColorMode}
-                >
-                  Toggle theme
-                </c.MenuItem>
-                <c.MenuDivider />
-                <Link to="/signin">
-                  <c.MenuItem>Login</c.MenuItem>
-                </Link>
-                <Link to="/signin">
-                  <c.MenuItem fontWeight="semibold">Register</c.MenuItem>
-                </Link>
-              </>
+        <HStack spacing={{ base: '0', md: '6' }} display={{ base: "flex", md: session ? "flex" : "none" }}>
+          <Flex alignItems={'center'}>
+            {session && (
+              <Tooltip label='Notification will come soon'>
+                <IconButton
+                  isDisabled={true}
+                  size="lg"
+                  variant="ghost"
+                  aria-label="open menu"
+                  icon={<FiBell />}
+                />
+              </Tooltip>
             )}
-          </c.MenuList>
-        </c.Menu>
+            <Menu placement="bottom-end" closeOnSelect closeOnBlur>
+              <MenuButton
+                p={0}
+                borderRadius="full">
+                <HStack>
+                  {session ? (
+                    <>
+                      <ProfileAvatar avatarSize="sm" url={profile?.avatarUrl} avatarName={truncate(session?.user?.email!)} />
+                      <VStack
+                        display={{ base: 'none', md: 'flex' }}
+                        alignItems="flex-start"
+                        spacing="1px"
+                        ml="2">
+                        <Text fontSize="sm">{profile?.username}</Text>
+                        <Text fontSize="xs" color="gray.600">
+                          Admin
+                        </Text>
+                      </VStack>
+                      <Box display={{ base: 'none', md: 'flex' }}>
+                        <FiChevronDown />
+                      </Box>
+                    </>
+                  ) : (
+                    <c.Box as={GiHamburgerMenu} />
+                  )}
+                </HStack>
+              </MenuButton>
+              <c.MenuList fontSize="md">
+                {session ? (
+                  <>
+                    <Link to="/admin/profile">
+                      <c.MenuItem icon={<c.Box as={BiUser} boxSize="16px" />}>Profile</c.MenuItem>
+                    </Link>
+                    <Link to="/admin">
+                      <c.MenuItem icon={<c.Box as={BiCog} boxSize="16px" />}>Admin</c.MenuItem>
+                    </Link>
+                    <c.MenuDivider />
+                    <c.MenuItem
+                      closeOnSelect={false}
+                      icon={<c.Box as={isDark ? BiSun : BiMoon} boxSize="16px" />}
+                      onClick={toggleColorMode}
+                    >
+                      Toggle theme
+                    </c.MenuItem>
+                    <c.MenuDivider />
+                    <c.MenuItem
+                      onClick={handleSignOut}
+                      icon={<c.Box as={BiExit} boxSize="16px" />}
+                    >
+                      Logout
+                    </c.MenuItem>
+                  </>
+                ) : (
+                  <>
+                    <c.MenuItem
+                      closeOnSelect={false}
+                      icon={<c.Box as={isDark ? BiSun : BiMoon} boxSize="16px" />}
+                      onClick={toggleColorMode}
+                    >
+                      Toggle theme
+                    </c.MenuItem>
+                    <c.MenuDivider />
+                    <Link to="/signin">
+                      <c.MenuItem>Login</c.MenuItem>
+                    </Link>
+                    <Link to="/signin">
+                      <c.MenuItem fontWeight="semibold">Register</c.MenuItem>
+                    </Link>
+                  </>
+                )}
+              </c.MenuList>
+            </Menu>
+          </Flex>
+        </HStack>
       </Limiter>
     </c.Box>
   )

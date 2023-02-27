@@ -10,7 +10,6 @@ import {
   AppShellSidebarFooter,
   AppShellSidebarHeader
 } from "../components/shared/AppShell";
-import { Brand } from "../components/shared/Brand";
 import { DarkModeSwitch } from "../components/shared/DarkModeSwitch";
 import { ProfileMenu } from "../components/auth/ProfileMenu";
 import { UserSearch } from "../components/user/UserSearch";
@@ -31,18 +30,6 @@ function AdminLayout() {
     <AppShell>
       <AppShellSidebar>
         <AppShellSidebarHeader>
-          <Brand />
-        </AppShellSidebarHeader>
-        <AppShellSidebarBody>
-          <Stack spacing={2}>
-            {links.map((link) => (
-              <NavItem key={link.href} href={link.href} icon={link.icon}>
-                {link.label}
-              </NavItem>
-            ))}
-          </Stack>
-        </AppShellSidebarBody>
-        <AppShellSidebarFooter>
           <Stack spacing={4} mb='5'>
             <Button
               as={NavLink}
@@ -54,6 +41,28 @@ function AdminLayout() {
               Home Page
             </Button>
           </Stack>
+        </AppShellSidebarHeader>
+        <AppShellSidebarBody>
+          <Stack spacing={2}>
+            {links.map((link) => (
+              <NavItem key={link.href} href={link.href} icon={link.icon}>
+                {link.label}
+              </NavItem>
+            ))}
+          </Stack>
+        </AppShellSidebarBody>
+        <AppShellSidebarFooter>
+          {/* <Stack spacing={4} mb='5'>
+            <Button
+              as={NavLink}
+              justifyContent="left"
+              leftIcon={<ArrowBackIcon />}
+              to="/"
+              variant="ghost"
+            >
+              Home Page
+            </Button>
+          </Stack> */}
           <ProfileMenu />
         </AppShellSidebarFooter>
       </AppShellSidebar>
