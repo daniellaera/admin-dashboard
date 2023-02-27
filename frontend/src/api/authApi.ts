@@ -95,6 +95,11 @@ export async function fetchProfileByEmail(email: string): Promise<Profile> {
   return data;
 }
 
+export async function fetchProfiles(): Promise<Profile[]> {
+  const { data } = await axios.get(profileUrl);
+  return data;
+}
+
 export async function signOut() {
   const { error } = await supabaseClient.auth.signOut()
   if (error) throw error;

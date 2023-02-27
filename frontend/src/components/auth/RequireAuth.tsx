@@ -11,7 +11,6 @@ function RequireAuth({ children }: ProtectedRouteProps) {
 
     if (!user) {
         // user is not authenticated
-        console.log('user', user)
         return <Navigate to="/signin" state={{ from: location }} replace/>;
     }
     return <>{children}</>

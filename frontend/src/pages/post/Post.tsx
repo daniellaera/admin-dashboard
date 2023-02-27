@@ -1,5 +1,5 @@
 import { ArrowBackIcon } from "@chakra-ui/icons";
-import { Avatar, Box, Button, Center, Divider, Flex, Heading, Text, Wrap } from "@chakra-ui/react"
+import { Box, Button, Center, Divider, Flex, Heading, Text, Wrap } from "@chakra-ui/react"
 import moment from "moment";
 import { Link, useParams } from "react-router-dom";
 import { BlogAuthor } from "../../components/shared/Blog";
@@ -59,15 +59,7 @@ export const Post = () => {
             {data?.content}
           </Text>
         </Box>
-        <Box>
-          <Avatar
-            size="xs"
-            name="Benjamin Carlson"
-            src="../images/portrait.jpeg"
-            mr={2}
-          />
-          {(data?.profile.username || data?.profile.authorEmail) + ' - ' + moment(data?.updatedAt).format('Do MMMM YYYY')}
-        </Box>
+        <BlogAuthor avatarUrl={data?.profile.avatarUrl} userEmail={data?.profile.authorEmail!} name={data?.profile.username!} date={moment(data?.createdAt).format('Do MMMM YYYY')} />
       </Wrap>
       <Divider marginTop={'5'} />
       {session ? <CommentForm post={data} /> : <Empty message="You need to login to comment the post" />}
@@ -78,7 +70,7 @@ export const Post = () => {
               <Text as="p" fontSize="md" marginTop="2">
                 {text}
               </Text>
-              <BlogAuthor name={profile?.authorEmail} date={moment(createdAt).format('Do MMMM YYYY')} />
+              <BlogAuthor avatarUrl={profile?.avatarUrl} userEmail={profile?.authorEmail} name={profile?.authorEmail} date={moment(createdAt).format('Do MMMM YYYY')} />
             </Box>
           </Center>
         </Flex>

@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
         select: {
           username: true,
           authorEmail: true,
+          avatarUrl: true,
         },
       },
       comments: {
@@ -53,6 +54,7 @@ router.get('/post/:id', async (req, res) => {
           select: {
             username: true,
             authorEmail: true,
+            avatarUrl: true,
           },
         },
         comments: true,

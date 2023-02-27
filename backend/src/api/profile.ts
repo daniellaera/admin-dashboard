@@ -4,6 +4,19 @@ import prisma from '../lib/prisma';
 
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+  const profiles = await prisma.profile.findMany({
+    include: {
+      programmingLanguages: {
+        select: {
+          label: true,
+        },
+      },
+    },
+  });
+  res.status(200).json(profiles);
+});
+
 router.get('/findProfileByEmail/:authorEmail', async (req, res) => {
   const { authorEmail } = req.params;
 

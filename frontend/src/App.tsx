@@ -21,6 +21,7 @@ import { Post as LandingPost } from './pages/post/Post'
 import { Posts as LandingPosts } from './pages/post/Posts'
 import { Post } from "./pages/admin/Post"
 import Signin from "./pages/auth/Signin"
+import Developers from "./pages/developers/Developers"
 
 export const App = () => {
   return (
@@ -37,6 +38,7 @@ export const App = () => {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/posts" element={<LandingPosts />} />
+              <Route path="/developers" element={<Developers />} />
               <Route path="/posts/:id" element={<LandingPost />} />
             </Route>
             <Route path='*' element={<NotFound />} />

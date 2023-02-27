@@ -61,6 +61,7 @@ const Nav = () => {
             DevConnector 🚀
           </Link>
           <Link to="/posts">Posts</Link>
+          <Link to="/developers">Developers</Link>
         </c.HStack>
 
         {/* Right link list */}

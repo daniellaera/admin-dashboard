@@ -22,8 +22,8 @@ import { usePost } from "../../hooks/post/usePost";
 import PostForm from "../../components/post/PostForm";
 
 export const Post = () => {
-    const { id } = useParams();
-    const { data, isError, isLoading } = usePost(Number(id));
+  const { id } = useParams();
+  const { data, isError, isLoading } = usePost(Number(id));
 
   const isUpdate = !!id;
 
