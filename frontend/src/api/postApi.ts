@@ -1,4 +1,5 @@
 import axios from "axios";
+import { supabaseClient } from "../config/supabase-client";
 import { Post } from "../types/post";
 
 const postUrl: string = `${process.env.REACT_APP_BACKEND_URL}/api/v1/posts`;
@@ -19,7 +20,11 @@ export async function fetchPostById(id: number): Promise<Post> {
 }
 
 export async function addPost(post: Post): Promise<Post> {
-  const { data } = await axios.post(postUrl + '/create', post);
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  const { data } = await axios.post(postUrl + '/create', post, {
+    headers: { Authorization: `token ${session?.access_token}` }
+  });
   return data;
 }
 

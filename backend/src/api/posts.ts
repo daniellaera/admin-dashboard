@@ -1,5 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma';
+import { auth } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ router.put('/updateById/:postId', async (req, res) => {
   res.json(postUpdated);
 });
 
-router.post('/create', async (req, res) => {
+router.post('/create', auth, async (req, res) => {
   const { title, content, type, published, profileId } = req.body;
   try {
     const result = await prisma.post.create({

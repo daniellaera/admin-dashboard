@@ -4,7 +4,6 @@ import { Toolbar, ToolbarActions, ToolbarTitle } from "../../components/shared/T
 import { Link } from "react-router-dom";
 import { Loading } from "../../components/shared/Loading";
 import { Result } from "../../components/shared/Result";
-import { Empty } from "../../components/shared/Empty";
 import { PostTable } from "../../components/post/PostTable";
 import { useMemo, useRef, useState } from "react";
 import { Post } from "../../types/post";
@@ -88,29 +87,25 @@ const Posts = () => {
           </Button>
         </ToolbarActions>
       </Toolbar>
-      {data?.length === 0 ? <>
-        <Empty message="Posts will show up here!" />
-      </> : <>
-        <Card mt="8">
-          <CardHeader>
-            <Text>Posts table</Text>
-          </CardHeader>
-          <CardBody>
-            <PostTable
-              onDelete={(post) => handleOpenRemoveAlert(post)}
-              posts={posts}
-            />
-          </CardBody>
-          <CardFooter>
-            <Pagination
-              onPageChange={handlePageChange}
-              pageIndex={pageIndex}
-              pageSize={pageSize}
-              total={data?.length!}
-            />
-          </CardFooter>
-        </Card>
-      </>}
+      <Card mt="8">
+        <CardHeader>
+          <Text>Posts table</Text>
+        </CardHeader>
+        <CardBody>
+          <PostTable
+            onDelete={(post) => handleOpenRemoveAlert(post)}
+            posts={posts}
+          />
+        </CardBody>
+        <CardFooter>
+          <Pagination
+            onPageChange={handlePageChange}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            total={data?.length!}
+          />
+        </CardFooter>
+      </Card>
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}

@@ -14,7 +14,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
 
       jwt.verify(token, supabaseSecret) as JwtPayload;
     } else {
-      res.status(401).json({ msg: 'No token, auth denied!' });
+      return res.status(401).json({ msg: 'No token, auth denied!' });
     }
 
     next();
