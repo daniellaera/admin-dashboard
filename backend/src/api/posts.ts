@@ -6,6 +6,9 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   const posts = await prisma.post.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
     where: {
       published: true,
     },

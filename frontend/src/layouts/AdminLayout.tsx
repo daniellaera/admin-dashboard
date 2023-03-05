@@ -15,13 +15,14 @@ import { ProfileMenu } from "../components/auth/ProfileMenu";
 import { UserSearch } from "../components/user/UserSearch";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import NavItem from "../components/shared/NavItem";
-import { FiGrid, FiMessageCircle, FiSettings, FiUser, FiUsers } from "react-icons/fi";
+import { FiClipboard, FiGrid, FiMessageCircle, FiSettings, FiUser, FiUsers } from "react-icons/fi";
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: FiGrid },
   { href: "/admin/users", label: "Users", icon: FiUsers },
   { href: "/admin/profile", label: "Profile", icon: FiUser },
   { href: "/admin/posts", label: "Posts", icon: FiMessageCircle },
+  /* { href: "/admin/websocket", label: "Tasks", icon: FiClipboard }, */
   { href: "/404", label: "404 Page", icon: FiSettings }
 ];
 

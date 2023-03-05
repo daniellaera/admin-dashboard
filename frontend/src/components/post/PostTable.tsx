@@ -33,7 +33,7 @@ const PostTable = ({ onDelete, posts }: PostTableProps) => {
           <Tr>
             <Th>Title</Th>
             <Th>Content</Th>
-            <Th>Published</Th>
+            <Th>Status</Th>
             <Th isNumeric>Actions</Th>
           </Tr>
         </Thead>

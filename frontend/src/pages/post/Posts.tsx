@@ -1,4 +1,4 @@
-import { Badge, Box, Divider, Heading, IconButton, Stack, Text, Wrap, WrapItem } from "@chakra-ui/react"
+import { Badge, Box, Divider, Heading, HStack, IconButton, ScaleFade, Stack, Tag, TagLabel, Text, Wrap, WrapItem } from "@chakra-ui/react"
 import { Link, useNavigate } from "react-router-dom";
 import moment from "moment";
 import { HiOutlineChat } from 'react-icons/hi';
@@ -13,18 +13,35 @@ import './Posts.css';
 import { LikeButton } from "../../components/shared/LikeButton";
 import { getRandomColor } from "../../utils/functions";
 import { Pagination } from "../../components/shared/Pagination";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { ArrowDownIcon } from "@chakra-ui/icons";
+import { socket } from "../../utils/constants";
 
 const pageSize = 5;
 
 export const Posts = () => {
-  const { data, isError, isLoading } = usePosts();
+  const { data, isError, isLoading, refetch } = usePosts();
   const navigate = useNavigate();
   const [pageIndex, setPageIndex] = useState(0);
+  const [chipVisible, setChipVisible] = useState<boolean>();
+
+  const toggleChip = useCallback(
+    () => setChipVisible(!chipVisible),
+    [chipVisible, setChipVisible],
+  );
 
   const posts = useMemo(() => {
     return data?.slice(pageIndex * pageSize, pageIndex * pageSize + pageSize);
   }, [data, pageIndex]);
+
+  useEffect(() => {
+    socket.on("postBroadcasted", (postBroadcasted) => {
+      if (postBroadcasted.post.published) {
+        toggleChip()
+      }
+    });
+
+  }, [toggleChip]);
 
   if (data?.length === 0) {
     return <Empty message="Posts will show up here!" />
@@ -48,10 +65,31 @@ export const Posts = () => {
     setPageIndex(newPageIndex);
   }
 
+  const reloadPosts = (): any => {
+    refetch()
+    toggleChip()
+  }
+
   return (
     <Page animation="slideFade">
+      {chipVisible &&
+        <ScaleFade initialScale={0.9} in={chipVisible}>
+          <HStack spacing={4} justifyContent={'center'} onClick={reloadPosts}>
+            <Tag
+              cursor='pointer'
+              size={'lg'}
+              borderRadius='full'
+              variant='solid'
+              colorScheme='blue'
+            >
+              <TagLabel>New posts</TagLabel>
+              <ArrowDownIcon />
+            </Tag>
+          </HStack>
+        </ScaleFade>
+      }
       {posts?.map(({ id, createdAt, title, content, comments, likes, profile, type }: Post, i: number) => (
-        <Wrap spacing="30px" marginTop="5" key={i}>
+        <Wrap spacing="30px" marginTop="10" key={i}>
           <WrapItem >
             <Box w="100%" >
               <Link to={`/posts/${id}`}>

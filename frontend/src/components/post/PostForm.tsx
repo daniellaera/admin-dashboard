@@ -6,9 +6,10 @@ import { useAddPost } from "../../hooks/post/useAddPost";
 import { useUpdatePost } from "../../hooks/post/useUpdatePost";
 import { useAuth } from "../../providers/AuthProvider";
 import { Post } from "../../types/post";
-import { PostType, POST_TYPE_OPTIONS } from "../../utils/constants";
+import { PostType, POST_TYPE_OPTIONS, socket } from "../../utils/constants";
 import { FormHeader } from "../shared/Form"
 import { Page } from "../shared/Page"
+import { useNavigate } from "react-router-dom";
 
 type FormValues = {
     title: string;
@@ -23,6 +24,7 @@ type PostFormProps = {
 };
 
 const PostForm = ({ initialValues }: PostFormProps) => {
+    const navigate = useNavigate();
     const toast = useToast();
     const addPost = useAddPost();
     const updatePost = useUpdatePost()
@@ -49,9 +51,11 @@ const PostForm = ({ initialValues }: PostFormProps) => {
         addPost.mutate(post as Post, {
             onSuccess: () => {
                 toast({
-                    description: `${post.title} ${post.content} has been added`,
+                    description: `post has been added`,
                     status: "success"
                 });
+                navigate("/admin/posts");
+                socket.emit("createPost", { post, username: profile?.username });
             },
             onError: () => {
                 toast({

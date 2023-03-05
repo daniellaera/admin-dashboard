@@ -6,6 +6,7 @@ import { useAddComment } from "../../hooks/comments/useAddComment";
 import { useAuth } from "../../providers/AuthProvider";
 import { Comment } from "../../types/comment";
 import { Post } from "../../types/post";
+import { socket } from "../../utils/constants";
 
 type FormValues = {
     text: string;
@@ -43,6 +44,7 @@ const CommentForm = ({ post, ...rest }: PostFormProps) => {
                     description: `${comment.text} has been added`,
                     status: "success"
                 });
+                socket.emit("addComment", { comment, username: profile?.username });
             },
             onError: () => {
                 toast({

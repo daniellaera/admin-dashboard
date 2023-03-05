@@ -1,3 +1,5 @@
+import { io } from "socket.io-client";
+
 export const PostTypes = {
     FUNNY: 'FUNNY',
     TECH: 'TECH',
@@ -21,3 +23,7 @@ export const DELETE_BUTTON_TEXT = 'You can delete this post';
 export const LIKE_BUTTON_TEXT = 'Smash the like button!';
 export const LIKE_BUTTON_TEXT_DISABLED = 'you must be logged in to like the post';
 export const UPLOAD_PICTURE_DISABLED_TEXT = 'You must create your profile first'
+
+const socketIoBackendUrl: string = `${process.env.REACT_APP_BACKEND_URL}`;
+
+export const socket = io(`${socketIoBackendUrl}`);

@@ -3,24 +3,32 @@ import { GiHamburgerMenu } from "react-icons/gi"
 import * as c from "@chakra-ui/react"
 import { Limiter } from "./Limiter"
 import { LinkButton } from "./LinkButton"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useProfile } from "../../hooks/auth/useProfile";
 import { useAuth } from "../../providers/AuthProvider";
 import { DarkModeSwitch } from "./DarkModeSwitch"
 import { useSignOut } from "../../hooks/auth/useSignOut"
-import { Box, Flex, HStack, IconButton, Menu, MenuButton, Text, Tooltip, useToast, VStack } from "@chakra-ui/react"
+import { Box, Flex, HStack, Menu, MenuButton, Text, useToast, VStack } from "@chakra-ui/react"
 import ProfileAvatar from "./ProfileAvatar"
 import { truncate } from "../../utils/functions"
-import { FiBell, FiChevronDown } from "react-icons/fi"
+import { FiChevronDown } from "react-icons/fi"
+import {
+  NovuProvider,
+  PopoverNotificationCenter,
+  NotificationBell,
+} from "@novu/notification-center";
 
 const Nav = () => {
-  //const navigate = useNavigate();
+  const navigate = useNavigate();
   const { colorMode, toggleColorMode } = c.useColorMode()
   const isDark = colorMode === "dark"
   const { session } = useAuth();
   const { data: profile } = useProfile(session?.user.email);
   const signOut = useSignOut();
   const toast = useToast();
+
+  const onNotificationClick = (notification: any) =>
+	navigate(`/posts/${notification.payload.postId}`);
 
   const handleSignOut = () => {
     signOut.mutate(undefined, {
@@ -83,15 +91,21 @@ const Nav = () => {
         <HStack spacing={{ base: '0', md: '6' }} display={{ base: "flex", md: session ? "flex" : "none" }}>
           <Flex alignItems={'center'}>
             {session && (
-              <Tooltip label='Notification will come soon'>
-                <IconButton
-                  isDisabled={true}
-                  size="lg"
-                  variant="ghost"
-                  aria-label="open menu"
-                  icon={<FiBell />}
-                />
-              </Tooltip>
+              <Box mr='5'>
+              <NovuProvider
+                subscriberId='6334adc227d50dea0b1b5404'
+                applicationIdentifier='vTbMIBFNZdXt'
+              >
+                <PopoverNotificationCenter
+                  onNotificationClick={onNotificationClick}
+                  colorScheme='dark'
+                >
+                  {({ unseenCount }) => (
+                    <NotificationBell unseenCount={unseenCount} />
+                  )}
+                </PopoverNotificationCenter>
+              </NovuProvider>
+              </Box>
             )}
             <Menu placement="bottom-end" closeOnSelect closeOnBlur>
               <MenuButton
