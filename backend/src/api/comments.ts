@@ -23,6 +23,9 @@ router.get('/commentsByPostId/:postId', async (req, res) => {
   const { postId } = req.params;
   try {
     const comments = await prisma.comment.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
       where: {
         postId: Number(postId),
       },

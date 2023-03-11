@@ -13,7 +13,7 @@ const BlogAuthor: React.FC<BlogAuthorProps> = (props) => {
   return (
     <HStack marginTop="4" spacing="2" display="flex" alignItems="center">
       <ProfileAvatar mr="3" avatarSize="sm" url={props.avatarUrl} avatarName={truncate(props.userEmail)} />
-      <Text fontSize={'small'}>{props.name} - {props.date}</Text>
+      <Text fontSize={'small'}>{props.name || props.userEmail} - {props.date}</Text>
     </HStack>
   );
 };

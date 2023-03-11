@@ -28,7 +28,7 @@ const Nav = () => {
   const toast = useToast();
 
   const onNotificationClick = (notification: any) =>
-	navigate(`/posts/${notification.payload.postId}`);
+    navigate(`/posts/${notification.payload.postId}`);
 
   const handleSignOut = () => {
     signOut.mutate(undefined, {
@@ -92,19 +92,22 @@ const Nav = () => {
           <Flex alignItems={'center'}>
             {session && (
               <Box mr='5'>
-              <NovuProvider
-                subscriberId='6334adc227d50dea0b1b5404'
-                applicationIdentifier='vTbMIBFNZdXt'
-              >
-                <PopoverNotificationCenter
-                  onNotificationClick={onNotificationClick}
-                  colorScheme='dark'
+                <NovuProvider
+                  subscriberId={`${profile?.id}`}
+                  applicationIdentifier='vTbMIBFNZdXt'
                 >
-                  {({ unseenCount }) => (
-                    <NotificationBell unseenCount={unseenCount} />
-                  )}
-                </PopoverNotificationCenter>
-              </NovuProvider>
+                  <PopoverNotificationCenter
+                    showUserPreferences={false}
+                    footer={() => <></>}
+                    onNotificationClick={onNotificationClick}
+                    colorScheme={colorMode}
+                    allowedNotificationActions={true}
+                  >
+                    {({ unseenCount }) => (
+                      <NotificationBell unseenCount={unseenCount} />
+                    )}
+                  </PopoverNotificationCenter>
+                </NovuProvider>
               </Box>
             )}
             <Menu placement="bottom-end" closeOnSelect closeOnBlur>

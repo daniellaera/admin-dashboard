@@ -7,36 +7,19 @@ import api from './api';
 import MessageResponse from './interfaces/MessageResponse';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { novu } from './config/novu-client';
+import { sendCommentNotification } from './functions/commentNotification';
 
 require('dotenv').config();
 
 const app = express();
-const server = createServer(app); 
+const server = createServer(app);
 
 const socketIO = new Server(server, {
   cors: {
-    //origin: 'http://localhost:3000',
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
   },
 });
-
-const sendCommentNotification = async (postId: number, username: string) => {
-  try {
-	 const result = await novu.trigger('comment-template', {
-		 to: {
-			 subscriberId: `${process.env.NOVU_SUBSCRIBER_ID}`,
-		 },
-		 payload: {
-			  postId: postId,
-        username: username,
-		 },
-	 });
-	 console.log(result);
-  } catch (err) {
-	 console.error('Error >>>>', { err });
-  }
-};
 
 socketIO.on('connection', (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
@@ -51,9 +34,9 @@ socketIO.on('connection', (socket) => {
 
   socket.on('addComment', (data) => {
     socket.broadcast.emit('commentBroadcasted', data);
-    console.log('data->', data);
+    //console.log('data->', data);
     // 👇🏻 sends notification via Novu
-    sendCommentNotification(data.comment.postId, data.username);
+    sendCommentNotification(data.post.id, data.post.profileId, data.profile.authorEmail);
   });
 
   socket.on('disconnect', () => {

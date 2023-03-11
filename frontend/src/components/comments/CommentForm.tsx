@@ -44,7 +44,7 @@ const CommentForm = ({ post, ...rest }: PostFormProps) => {
                     description: `${comment.text} has been added`,
                     status: "success"
                 });
-                socket.emit("addComment", { comment, username: profile?.username });
+                socket.emit("addComment", { post, profile, comment });
             },
             onError: () => {
                 toast({

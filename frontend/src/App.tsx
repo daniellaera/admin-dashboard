@@ -22,7 +22,6 @@ import { Posts as LandingPosts } from './pages/post/Posts'
 import { Post } from "./pages/admin/Post"
 import Signin from "./pages/auth/Signin"
 import Developers from "./pages/developers/Developers"
-import WebSocket from "./pages/admin/WebSocket"
 
 export const App = () => {
   return (

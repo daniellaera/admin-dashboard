@@ -1,6 +1,7 @@
 import express from 'express';
 import { supabaseClient } from '../config/supabase-client';
 import prisma from '../lib/prisma';
+import { novu } from '../config/novu-client';
 
 const router = express.Router();
 
@@ -47,6 +48,9 @@ router.post('/create', async (req, res) => {
       authorEmail,
     },
   });
+
+  await novu.subscribers.identify(`${result.id}`, { email: result.authorEmail });
+
   res.json(result);
 });
 
@@ -66,6 +70,9 @@ router.post('/createProfileBySocial/:email', async (req, res) => {
           authorEmail: email,
         },
       });
+
+      await novu.subscribers.identify(`${result.id}`, { email: result.authorEmail });
+
       res.status(200).json(result);
       console.log('profile created', result);
     }
@@ -86,6 +93,9 @@ router.delete('/delete/:profileId', async (req, res) => {
   console.log('deleting user from DB', result);
 
   await supabaseClient.auth.admin.deleteUser(data.user?.id!);
+
+  // delete also the Novu user
+  await novu.subscribers.delete(`${result.id}`);
 
   console.log('deleting user from supabase with id', data.user?.id);
 

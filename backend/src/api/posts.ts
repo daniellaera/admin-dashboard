@@ -56,6 +56,7 @@ router.get('/post/:id', async (req, res) => {
       include: {
         profile: {
           select: {
+            id: true,
             username: true,
             authorEmail: true,
             avatarUrl: true,

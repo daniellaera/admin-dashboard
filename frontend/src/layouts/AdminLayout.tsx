@@ -15,7 +15,7 @@ import { ProfileMenu } from "../components/auth/ProfileMenu";
 import { UserSearch } from "../components/user/UserSearch";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import NavItem from "../components/shared/NavItem";
-import { FiClipboard, FiGrid, FiMessageCircle, FiSettings, FiUser, FiUsers } from "react-icons/fi";
+import { FiGrid, FiMessageCircle, FiSettings, FiUser, FiUsers } from "react-icons/fi";
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: FiGrid },

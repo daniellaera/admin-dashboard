@@ -139,4 +139,3 @@ export const Posts = () => {
     </Page>
   )
 }
-
