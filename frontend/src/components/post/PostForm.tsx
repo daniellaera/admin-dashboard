@@ -1,6 +1,6 @@
 import { Box, Button, Checkbox, Flex, FormControl, FormErrorMessage, FormLabel, Heading, Input, Select, Stack, Textarea, useToast } from "@chakra-ui/react"
 import { useEffect } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useProfile } from "../../hooks/auth/useProfile";
 import { useAddPost } from "../../hooks/post/useAddPost";
 import { useUpdatePost } from "../../hooks/post/useUpdatePost";
@@ -10,13 +10,17 @@ import { PostType, POST_TYPE_OPTIONS, socket } from "../../utils/constants";
 import { FormHeader } from "../shared/Form"
 import { Page } from "../shared/Page"
 import { useNavigate } from "react-router-dom";
+import { Tag, tags } from "../../types/tag";
+import { Select as MultiSelect } from "chakra-react-select";
 
 type FormValues = {
+    id: number;
     title: string;
     content: string;
     profileId: number;
     published: boolean;
     type: PostType
+    tags: Tag[]
 };
 
 type PostFormProps = {
@@ -39,6 +43,7 @@ const PostForm = ({ initialValues }: PostFormProps) => {
         register,
         setValue,
         reset,
+        control,
         formState: { errors }
     } = useForm<FormValues>();
 
@@ -143,6 +148,30 @@ const PostForm = ({ initialValues }: PostFormProps) => {
                             ))}
                         </Select>
                     </FormControl>
+                    <Controller
+                        control={control}
+                        name="tags"
+                        render={({
+                            field: { onChange, onBlur, value, name, ref },
+                            fieldState: { error }
+                        }) => (
+                            <FormControl py={4} isInvalid={!!error} id='tags'>
+                                <FormLabel>Post tags</FormLabel>
+                                <MultiSelect
+                                    isMulti
+                                    name={name}
+                                    ref={ref}
+                                    onChange={onChange}
+                                    onBlur={onBlur}
+                                    value={value}
+                                    options={tags}
+                                    placeholder="Pick post tags"
+                                    closeMenuOnSelect={false}
+                                />
+                                <FormErrorMessage>{error && error.message}</FormErrorMessage>
+                            </FormControl>
+                        )}
+                    />
                     <Flex direction="row-reverse">
                         <Button colorScheme="blue" type="submit" isLoading={isProcessing}>
                             Save

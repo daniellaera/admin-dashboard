@@ -18,7 +18,7 @@ type PostFormProps = {
     post?: Post;
 };
 
-const CommentForm = ({ post, ...rest }: PostFormProps) => {
+const CommentForm = ({ post }: PostFormProps) => {
     const toast = useToast();
     const addComment = useAddComment()
     const isProcessing = addComment.isLoading
@@ -29,6 +29,7 @@ const CommentForm = ({ post, ...rest }: PostFormProps) => {
         handleSubmit,
         register,
         setValue,
+        reset,
         formState: { errors, isValid }
     } = useForm<FormValues>();
 
@@ -40,6 +41,7 @@ const CommentForm = ({ post, ...rest }: PostFormProps) => {
     const handleAddComment: SubmitHandler<FormValues> = (comment) => {
         addComment.mutate(comment as Comment, {
             onSuccess: () => {
+                reset()
                 toast({
                     description: `${comment.text} has been added`,
                     status: "success"
@@ -68,7 +70,7 @@ const CommentForm = ({ post, ...rest }: PostFormProps) => {
                 spacing={2}
                 align={'center'}
             >
-                    <Stack spacing={4} direction={{ base: 'column', md: 'row' }} w={'full'}>
+                <Stack spacing={4} direction={{ base: 'column', md: 'row' }} w={'full'}>
                     <Input
                         id="text"
                         placeholder="write your comment here"

@@ -27,6 +27,7 @@ router.get('/', async (req, res) => {
         },
       },
       likes: true,
+      tags: true,
     },
   });
   res.status(200).json(posts);
@@ -63,6 +64,12 @@ router.get('/post/:id', async (req, res) => {
           },
         },
         comments: true,
+        tags: {
+          select: {
+            value: true,
+            label: true,
+          },
+        },
       },
     });
     res.json(post);
@@ -73,7 +80,10 @@ router.get('/post/:id', async (req, res) => {
 
 router.put('/updateById/:postId', async (req, res) => {
   const { postId } = req.params;
-  const { title, content, type, published } = req.body;
+  const { title, content, type, published, tags } = req.body;
+
+  // we delete all tags first
+  await prisma.$transaction([prisma.tags.deleteMany({ where: { postId: Number(postId) } })]);
 
   const postUpdated = await prisma.post.update({
     where: { id: Number(postId) },
@@ -82,6 +92,12 @@ router.put('/updateById/:postId', async (req, res) => {
       content: content,
       type: type,
       published: published,
+      tags: {
+        connectOrCreate: tags.map((value: string, id: number) => ({
+          create: value,
+          where: { id: id },
+        })),
+      },
     },
   });
 
@@ -89,7 +105,7 @@ router.put('/updateById/:postId', async (req, res) => {
 });
 
 router.post('/create', auth, async (req, res) => {
-  const { title, content, type, published, profileId } = req.body;
+  const { title, content, type, published, profileId, tags } = req.body;
   try {
     const result = await prisma.post.create({
       data: {
@@ -98,6 +114,12 @@ router.post('/create', auth, async (req, res) => {
         type: type,
         published: published,
         profileId: profileId,
+        tags: {
+          connectOrCreate: tags.map((value: string, id: number) => ({
+            create: value,
+            where: { id: id },
+          })),
+        },
       },
     });
     res.status(200).json(result);

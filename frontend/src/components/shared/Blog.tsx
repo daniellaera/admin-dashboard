@@ -1,4 +1,5 @@
 import { HStack, SpaceProps, Tag, Text } from "@chakra-ui/react";
+import { Tag as PostTag } from "../../types/tag";
 import { getRandomColor, truncate } from "../../utils/functions";
 import ProfileAvatar from "./ProfileAvatar";
 
@@ -19,17 +20,17 @@ const BlogAuthor: React.FC<BlogAuthorProps> = (props) => {
 };
 
 interface IBlogTags {
-  tags: Array<string>;
+  tags: PostTag[] | undefined;
   marginTop?: SpaceProps['marginTop'];
 }
 
 const BlogTags: React.FC<IBlogTags> = (props) => {
   return (
     <HStack spacing={2} marginTop={props.marginTop}>
-      {props.tags.map((tag) => {
+      {props.tags?.map((tag, index) => {
         return (
-          <Tag size={'sm'} variant='subtle' colorScheme={getRandomColor()} key={tag}>
-            {tag}
+          <Tag size={'sm'} variant='subtle' colorScheme={getRandomColor()} key={index}>
+            {tag.label}
           </Tag>
         );
       })}

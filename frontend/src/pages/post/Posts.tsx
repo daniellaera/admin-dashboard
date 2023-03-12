@@ -88,7 +88,7 @@ export const Posts = () => {
           </HStack>
         </ScaleFade>
       }
-      {posts?.map(({ id, createdAt, title, content, comments, likes, profile, type }: Post, i: number) => (
+      {posts?.map(({ id, createdAt, title, content, comments, likes, tags, profile, type }: Post, i: number) => (
         <Wrap spacing="30px" marginTop="10" key={i}>
           <WrapItem >
             <Box w="100%" >
@@ -111,7 +111,7 @@ export const Posts = () => {
                   name={profile?.username || profile?.authorEmail}
                   date={moment(createdAt).format('Do MMMM YYYY')}
                 />
-                <BlogTags tags={['Engineering', 'Product']} marginTop="4" />
+                <BlogTags tags={tags} marginTop="4" />
               </Link>
               <Stack justify={'flex-start'} direction={'row'} mt='4'>
                 <div>

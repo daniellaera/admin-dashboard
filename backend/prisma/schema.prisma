@@ -52,6 +52,17 @@ model Post {
   profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
+  tags      Tags[]
+}
+
+model Tags {
+  id     Int    @id @default(autoincrement())
+  value  String
+  label  String
+  postId Int
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([id])
 }
 
 model Comment {

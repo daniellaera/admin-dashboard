@@ -2,6 +2,7 @@ import { PostType } from "../utils/constants";
 import { Comment } from "./comment";
 import { Like } from "./like";
 import { Profile } from "./profile";
+import { Tag } from "./tag";
 
 export type Post = {
   id: number;
@@ -16,4 +17,5 @@ export type Post = {
   type: PostType
   comments?: Comment[]
   likes?: Like[]
+  tags?: Tag[]
 };

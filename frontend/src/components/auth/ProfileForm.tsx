@@ -92,7 +92,7 @@ function ProfileForm() {
         </Heading>
       </FormHeader>
       <FormLine id="userName">
-        <FormLineLabel>User Icon</FormLineLabel>
+        <FormLineLabel>User Avatar</FormLineLabel>
         <CustomAvatar size={size} color={color} url={profile?.avatarUrl} onUpload={(url: string) => {
           handleAvatar(url);
         }} />
