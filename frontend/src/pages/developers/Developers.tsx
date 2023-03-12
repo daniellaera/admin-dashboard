@@ -52,7 +52,7 @@ const Developers = () => {
         <Page>
             <Container maxW={'7xl'} py={16} as={Stack} spacing={12}>
                 <SimpleGrid spacing={4} templateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
-                    {data?.map(({ username, company, authorEmail, website, programmingLanguages, avatarUrl }: Profile, i: number) => (
+                    {data?.map(({ username, company, authorEmail, website, bio, programmingLanguages, avatarUrl }: Profile, i: number) => (
                         <Box key={i}>
                             <Card>
                                 <CardHeader>
@@ -73,8 +73,7 @@ const Developers = () => {
                                 </CardHeader>
                                 <CardBody>
                                     <Text>
-                                        With Chakra UI, I wanted to sync the speed of development with the speed of design. I wanted the
-                                        developer to be just as excited as the designer to create a screen.
+                                        {bio ? bio : ' Biography'}
                                     </Text>
                                     {programmingLanguages?.map((value, index) => (
                                         <Tag margin={2} key={index}>

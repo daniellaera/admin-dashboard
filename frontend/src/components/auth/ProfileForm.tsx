@@ -6,6 +6,7 @@ import {
   FormLabel,
   Heading,
   Input,
+  Textarea,
   useToast
 } from "@chakra-ui/react";
 import { useEffect } from "react";
@@ -32,6 +33,7 @@ type FormValues = {
   website: string;
   id: number;
   avatarUrl: string
+  bio: string
   programmingLanguages: ProgrammingLanguage[];
 };
 
@@ -137,6 +139,21 @@ function ProfileForm() {
             id="company"
             placeholder="Company"
             {...register("company", {
+              required: "This is required"
+            })}
+          />
+          <FormErrorMessage>
+            {errors.company && errors.company.message}
+          </FormErrorMessage>
+        </FormLineField>
+      </FormLine>
+      <FormLine isInvalid={!!errors.bio}>
+        <FormLineLabel htmlFor="bio">Bio</FormLineLabel>
+        <FormLineField>
+          <Textarea
+            id="bio"
+            placeholder="Bio"
+            {...register("bio", {
               required: "This is required"
             })}
           />

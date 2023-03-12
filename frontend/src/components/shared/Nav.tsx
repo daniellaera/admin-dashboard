@@ -64,17 +64,13 @@ const Nav = () => {
         alignItems="center"
         w="100%"
       >
-        {/* Left link list */}
-        <c.HStack spacing={8}>
+        <c.HStack spacing={8} display={{ base: "none", md: "flex" }}>
           <Link to="/">
             DevConnector 🚀
           </Link>
           <Link to="/posts">Posts</Link>
           <Link to="/developers">Developers</Link>
         </c.HStack>
-
-        {/* Right link list */}
-
         {!session && (
           <c.Fade in>
             <c.HStack spacing={4} display={{ base: "none", md: "flex" }}>
@@ -147,6 +143,9 @@ const Nav = () => {
                       <c.MenuItem icon={<c.Box as={BiCog} boxSize="16px" />}>Admin</c.MenuItem>
                     </Link>
                     <c.MenuDivider />
+                    <Link to="/posts"><c.MenuItem>Posts</c.MenuItem></Link>
+                    <Link to="/developers"><c.MenuItem>Developers</c.MenuItem></Link>
+                    <c.MenuDivider />
                     <c.MenuItem
                       closeOnSelect={false}
                       icon={<c.Box as={isDark ? BiSun : BiMoon} boxSize="16px" />}
@@ -154,7 +153,7 @@ const Nav = () => {
                     >
                       Toggle theme
                     </c.MenuItem>
-                    <c.MenuDivider />
+
                     <c.MenuItem
                       onClick={handleSignOut}
                       icon={<c.Box as={BiExit} boxSize="16px" />}
@@ -172,6 +171,8 @@ const Nav = () => {
                       Toggle theme
                     </c.MenuItem>
                     <c.MenuDivider />
+                    <Link to="/posts"><c.MenuItem>Posts</c.MenuItem></Link>
+                    <Link to="/developers"><c.MenuItem>Developers</c.MenuItem></Link>
                     <Link to="/signin">
                       <c.MenuItem>Login</c.MenuItem>
                     </Link>

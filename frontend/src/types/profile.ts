@@ -6,6 +6,7 @@ export type Profile = {
   createdAt?: Date
   updatedAt?: Date
   avatarUrl?: string
+  bio?: string
   username?: string
   website?: string
   company?: string

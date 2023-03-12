@@ -9,7 +9,6 @@ import {
   Text
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { Brand } from "./Brand";
 
 const columns = [
   {
@@ -32,7 +31,7 @@ const columns = [
 
 function Footer() {
   return (
-    <Box as="footer" pt="10" style={{ marginTop: '10vh'}}>
+    <Box as="footer" pt="10" style={{ marginTop: '10vh' }}>
       <Divider />
       <Container maxWidth="5xl">
         <Stack
@@ -42,7 +41,6 @@ function Footer() {
           spacing="8"
         >
           <Stack spacing="8">
-            <Brand />
             <Text color="muted" maxWidth="xs">
               Admin dashboard built with React & ChakraUI
             </Text>

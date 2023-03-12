@@ -18,6 +18,7 @@ model Profile {
   username             String?
   website              String?
   company              String?
+  bio                  String?
   authorEmail          String                @unique
   isPublic             Boolean               @default(false)
   posts                Post[]
@@ -29,11 +30,11 @@ model Profile {
 }
 
 model ProgrammingLanguage {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   value     String
   label     String
   profileId Int
-  Profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  Profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([id])
 }

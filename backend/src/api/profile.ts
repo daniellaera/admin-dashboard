@@ -104,7 +104,7 @@ router.delete('/delete/:profileId', async (req, res) => {
 
 router.put('/updateById/:profileId', async (req, res) => {
   const { profileId } = req.params;
-  const { username, website, company, avatarUrl, programmingLanguages } = req.body;
+  const { username, website, company, bio, avatarUrl, programmingLanguages } = req.body;
 
   // we delete all programming languages first
   await prisma.$transaction([prisma.programmingLanguage.deleteMany({ where: { profileId: Number(profileId) } })]);
@@ -118,6 +118,7 @@ router.put('/updateById/:profileId', async (req, res) => {
       website: website,
       company: company,
       avatarUrl: avatarUrl,
+      bio: bio,
       programmingLanguages: {
         connectOrCreate: programmingLanguages.map((value: string, id: number) => ({
           create: value,
