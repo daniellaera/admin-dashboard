@@ -15,7 +15,7 @@ import type { Storage } from '../../lib/storage.ts';
 import { toPublicProfile } from '../users/mappers.ts';
 
 /** Avatar files: `avatars/<userId>/<hash>.webp` (256 px) and `<hash>-64.webp` (64 px). */
-export const AVATAR_PATH = /^avatars\/(\d{1,10})\/([a-f0-9]{16})(-64)?\.webp$/;
+const AVATAR_PATH = /^avatars\/(\d{1,10})\/([a-f0-9]{16})(-64)?\.webp$/;
 const ACCEPTED_INPUT = new Set(['jpeg', 'png', 'webp', 'gif', 'avif', 'tiff']);
 const MAX_INPUT_PIXELS = 40_000_000; // 40 MP guards against decompression bombs
 

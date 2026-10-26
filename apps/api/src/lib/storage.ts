@@ -17,7 +17,7 @@ export interface Storage {
   ensureWritable(): Promise<boolean>;
 }
 
-export class InvalidStoragePathError extends Error {
+class InvalidStoragePathError extends Error {
   constructor(relativePath: string) {
     super(`Refusing storage path outside the root: ${relativePath}`);
     this.name = 'InvalidStoragePathError';

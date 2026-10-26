@@ -6,7 +6,7 @@ import type { Storage } from './lib/storage.ts';
 import type { CurrentUser } from './modules/auth/session.ts';
 
 /** Request-scoped variables available on every Hono context. */
-export interface AppVariables {
+interface AppVariables {
   requestId: string;
   log: Logger;
   /** Whether X-Forwarded-* headers are trusted (TRUST_PROXY). */

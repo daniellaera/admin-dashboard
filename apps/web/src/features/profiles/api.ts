@@ -43,16 +43,6 @@ export const myProfileQuery = queryOptions({
   queryFn: () => api.get<ProfileDetail>('/me/profile'),
 });
 
-export const experiencesQuery = queryOptions({
-  queryKey: profileKeys.experiences,
-  queryFn: () => api.get<ExperienceDto[]>('/me/experiences'),
-});
-
-export const educationsQuery = queryOptions({
-  queryKey: profileKeys.educations,
-  queryFn: () => api.get<EducationDto[]>('/me/educations'),
-});
-
 export const catalogQuery = queryOptions({
   queryKey: profileKeys.catalog,
   queryFn: () => api.get<Catalog>('/catalog'),

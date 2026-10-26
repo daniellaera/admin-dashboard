@@ -41,7 +41,7 @@ export function SkillChips({ skills }: { skills: string[] }) {
   );
 }
 
-export function DeveloperCard({ profile }: { profile: PublicProfile }) {
+function DeveloperCard({ profile }: { profile: PublicProfile }) {
   return (
     <Card component="article" h="100%">
       <Stack gap="sm" h="100%">

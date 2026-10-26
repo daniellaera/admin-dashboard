@@ -50,7 +50,7 @@ export type Env = z.infer<typeof envSchema> & {
   githubEnabled: boolean;
 };
 
-export class EnvError extends Error {
+class EnvError extends Error {
   readonly issues: string[];
 
   constructor(issues: string[]) {

@@ -7,7 +7,7 @@ import type { Db } from './client.ts';
  * Locates the `drizzle/` folder (SQL migrations + journal) whether the code runs from
  * `src/` (tsx), from the `dist/` bundle, or from the Docker image (MIGRATIONS_DIR).
  */
-export function resolveMigrationsDir(): string {
+function resolveMigrationsDir(): string {
   const fromEnv = process.env.MIGRATIONS_DIR;
   if (fromEnv) return fromEnv;
   const candidates = [

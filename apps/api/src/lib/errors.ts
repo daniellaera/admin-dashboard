@@ -123,7 +123,7 @@ export class RateLimitedError extends AppError {
   }
 }
 
-export function sendProblem(c: Context<AppEnv>, error: AppError): Response {
+function sendProblem(c: Context<AppEnv>, error: AppError): Response {
   const problem = error.toProblem(c.req.path, c.get('requestId'));
   const headers = new Headers({ 'Content-Type': 'application/problem+json; charset=utf-8' });
   for (const [k, v] of Object.entries(error.headers)) headers.set(k, v);

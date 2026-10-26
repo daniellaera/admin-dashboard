@@ -44,14 +44,6 @@ export class SudoRequiredError extends AppError {
   }
 }
 
-/** Sensitive actions need a recent password confirmation on this session (ADR-013). */
-export const requireSudo: MiddlewareHandler<AppEnv> = async (c, next) => {
-  const user = c.get('user');
-  if (!user) throw new UnauthorizedError();
-  if (!user.sudoUntil || user.sudoUntil.getTime() <= Date.now()) throw new SudoRequiredError();
-  await next();
-};
-
 /** The authenticated user, for handlers mounted behind `requireAuth`. */
 export function currentUser(c: Context<AppEnv>): CurrentUser {
   const user = c.get('user');

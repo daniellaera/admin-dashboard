@@ -1,7 +1,7 @@
 import type { Me, Role } from '@devconnector/shared';
 import { notFound } from '@tanstack/react-router';
 
-export const STAFF_ROLES: readonly Role[] = ['owner', 'admin'];
+const STAFF_ROLES: readonly Role[] = ['owner', 'admin'];
 
 export function isStaff(me: Me | null | undefined): boolean {
   return me !== null && me !== undefined && STAFF_ROLES.includes(me.role);

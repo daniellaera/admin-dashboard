@@ -47,7 +47,7 @@ function SudoForm({ onConfirmed }: { onConfirmed: () => void }) {
   );
 }
 
-export function isSudoRequired(error: unknown): boolean {
+function isSudoRequired(error: unknown): boolean {
   return (
     error instanceof ApiError &&
     error.status === 403 &&

@@ -361,7 +361,7 @@ function MagicLinkForm() {
   );
 }
 
-export function ResendButton({ email }: { email: string }) {
+function ResendButton({ email }: { email: string }) {
   const resend = useResendVerification();
   return (
     <Button

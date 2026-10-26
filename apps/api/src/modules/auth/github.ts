@@ -4,7 +4,7 @@ import { AppError } from '../../lib/errors.ts';
 
 const TOKEN_ENDPOINT = 'https://github.com/login/oauth/access_token';
 
-export interface GitHubIdentity {
+interface GitHubIdentity {
   providerUserId: string;
   email: string;
   emailVerified: boolean;

@@ -7,7 +7,7 @@ import { comments, educations, experiences, likes, posts, profiles, users } from
 
 /** Development credentials (never used outside dev/test). */
 export const SEED_PASSWORD = 'Password123!';
-export const SEED_OWNER = { email: 'owner@devconnector.local', password: 'Owner1234!' } as const;
+const SEED_OWNER = { email: 'owner@devconnector.local', password: 'Owner1234!' } as const;
 export const SEED_ADMIN = { email: 'admin@devconnector.local', password: 'Admin1234!' } as const;
 
 interface Persona {

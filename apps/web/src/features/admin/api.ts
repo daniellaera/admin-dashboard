@@ -21,7 +21,7 @@ import { profileKeys } from '../profiles/api.ts';
 export type UsersFilters = Partial<Pick<AdminUsersQuery, 'page' | 'q' | 'role' | 'status'>>;
 export type AuditFilters = Partial<Pick<AuditQuery, 'page' | 'action' | 'userId'>>;
 
-export const adminKeys = {
+const adminKeys = {
   all: ['admin'] as const,
   stats: ['admin', 'stats'] as const,
   users: (filters: UsersFilters) => ['admin', 'users', filters] as const,

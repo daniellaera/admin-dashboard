@@ -6,7 +6,7 @@
 
 | Item | Value |
 |---|---|
-| Phase | **GO received 2026-10-26** (D-013: Q1/Q2/Q3/Q5 defaults, Q4 amended: e-mail never public). **Phase 3 in progress** — batches 1–8 done; next: batch 9 (Docker & CI), 10 (docs). Run batches 1→10 (TARGET.md §10) without stopping except for a blocking anomaly or an irreversible decision; then Phase 4 → `REPORT.md`. **Never push any branch** (user pushes after reviewing REPORT.md). |
+| Phase | **GO received 2026-10-26** (D-013: Q1/Q2/Q3/Q5 defaults, Q4 amended: e-mail never public). **Phase 3 in progress** — batches 1–8 done; batch 9 (Docker & CI) in progress. **Next action:** build the image locally (`docker compose up --build -d --wait`), smoke it (health, SPA, 404 JSON), run `E2E_BASE_URL=http://localhost:8080 pnpm test:e2e`, then commit Dockerfile/compose/CI (already written, uncommitted) and tick OPS-01/03. Then batch 10 (README, DEPLOY.md, MIGRATION.md + import script). **Commit at every green step** (user instruction 2026-10-26). Run batches 1→10 (TARGET.md §10) without stopping except for a blocking anomaly or an irreversible decision; then Phase 4 → `REPORT.md`. **Never push any branch** (user pushes after reviewing REPORT.md). |
 | Dev toolchain | Node **26.12.1** installed via nvm (not the default alias; prefix every shell command with `export PATH="$HOME/.nvm/versions/node/v26.12.1/bin:$PATH"`); pnpm 12.15.0 installed into that prefix (`npm i -g pnpm@12.15.0`; Node 26 has no corepack). |
 | Working branch | `modernize/2026` (started clean from `origin/main` @ `ccfe293`, no upstream tracking) |
 | Baseline branch | `main` = `origin/main` @ `ccfe293` ("tags", 2023-03-12). Never touched. |

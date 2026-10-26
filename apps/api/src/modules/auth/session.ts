@@ -8,7 +8,7 @@ import type { Env } from '../../env.ts';
 import { generateToken, hashToken } from '../../lib/tokens.ts';
 import type { AppEnv } from '../../types.ts';
 
-export const SESSION_COOKIE = 'dc_session';
+const SESSION_COOKIE = 'dc_session';
 const LAST_SEEN_THROTTLE_MS = 5 * 60 * 1000;
 
 /** The authenticated principal attached to a request. */

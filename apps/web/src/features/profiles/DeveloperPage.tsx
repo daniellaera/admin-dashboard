@@ -29,7 +29,7 @@ export function period(item: {
   return `${shortDate(item.startedOn)} – ${item.isCurrent || !item.endedOn ? 'present' : shortDate(item.endedOn)}`;
 }
 
-export function ExperienceTable({ items }: { items: ExperienceDto[] }) {
+function ExperienceTable({ items }: { items: ExperienceDto[] }) {
   if (items.length === 0) return <EmptyState message="Experiences will show up here!" />;
   return (
     <Table.ScrollContainer minWidth={600}>
@@ -61,7 +61,7 @@ export function ExperienceTable({ items }: { items: ExperienceDto[] }) {
   );
 }
 
-export function EducationTable({ items }: { items: EducationDto[] }) {
+function EducationTable({ items }: { items: EducationDto[] }) {
   if (items.length === 0) return <EmptyState message="Education will show up here!" />;
   return (
     <Table.ScrollContainer minWidth={600}>

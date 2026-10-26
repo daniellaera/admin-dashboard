@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler, PayloadTooLargeError } from './lib/error
 import { createMemoryEventBus } from './lib/events.ts';
 import { createRateLimiter, rateLimit } from './lib/rate-limit.ts';
 import { requestContext } from './lib/request-context.ts';
+import { spaRoutes } from './lib/spa.ts';
 import { createLocalStorage } from './lib/storage.ts';
 import { adminRoutes } from './modules/admin/routes.ts';
 import { createAdminService } from './modules/admin/service.ts';
@@ -147,10 +148,13 @@ export function createApp(deps: AppDeps) {
     // Rejects state-changing requests that a browser sent from another site (lib/csrf.ts).
     .use(`${API_PREFIX}/*`, csrfProtection(env.appOrigin))
     .route(API_PREFIX, api)
-    .route('/files', fileRoutes(files))
-    .notFound(notFoundHandler)
-    .onError(errorHandler);
+    .route('/files', fileRoutes(files));
 
+  // Production image: the built SPA is served by the same process (ADR-010). Registered last so
+  // API and file routes always win; its own 404s fall back to index.html.
+  if (env.WEB_DIST) app.route('/', spaRoutes(env.WEB_DIST, [API_PREFIX, '/files']));
+
+  app.notFound(notFoundHandler).onError(errorHandler);
   return app;
 }
 

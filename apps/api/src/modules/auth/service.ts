@@ -44,9 +44,9 @@ const TOKEN_TTL_MS: Record<TokenKind, number> = {
   magic_link: 15 * 60 * 1000,
 };
 
-export const INVALID_CREDENTIALS = 'Invalid e-mail or password';
+const INVALID_CREDENTIALS = 'Invalid e-mail or password';
 
-export class EmailNotVerifiedError extends AppError {
+class EmailNotVerifiedError extends AppError {
   constructor() {
     super(403, 'E-mail not verified', {
       detail: 'Confirm your e-mail address first. We can send the confirmation link again.',
@@ -55,7 +55,7 @@ export class EmailNotVerifiedError extends AppError {
   }
 }
 
-export class RegistrationClosedError extends AppError {
+class RegistrationClosedError extends AppError {
   constructor() {
     super(403, 'Registration is invite-only', {
       detail: 'New accounts can only be created with an invitation link',
