@@ -9,6 +9,7 @@ export default defineConfig({
     'scripts/seed': 'src/scripts/seed.ts',
     'scripts/reset': 'src/scripts/reset.ts',
     'scripts/owner-create': 'src/scripts/owner-create.ts',
+    'scripts/import-supabase': 'src/scripts/import-supabase.ts',
   },
   format: ['esm'],
   platform: 'node',

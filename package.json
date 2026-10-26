@@ -29,7 +29,8 @@
     "db:seed": "pnpm --filter @devconnector/api db:seed",
     "db:reset": "pnpm --filter @devconnector/api db:reset",
     "db:studio": "pnpm --filter @devconnector/api db:studio",
-    "owner:create": "pnpm --filter @devconnector/api owner:create"
+    "owner:create": "pnpm --filter @devconnector/api owner:create",
+    "import:supabase": "pnpm --filter @devconnector/api import:supabase"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
