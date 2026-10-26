@@ -5,6 +5,7 @@ import { createDatabase } from './db/client.ts';
 import { runMigrations } from './db/migrate.ts';
 import { loadEnv } from './env.ts';
 import { createLogger } from './lib/logger.ts';
+import { bootstrapAdmin } from './modules/auth/bootstrap.ts';
 
 function readVersion(): string {
   try {
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     await runMigrations(database.db);
     logger.info('database migrations up to date');
   }
+  await bootstrapAdmin(database.db, env, logger);
 
   const app = createApp({
     env,

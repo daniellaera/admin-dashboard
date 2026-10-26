@@ -73,6 +73,7 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   },
   prettier,
