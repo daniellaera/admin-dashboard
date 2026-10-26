@@ -8,7 +8,7 @@ export default defineConfig({
     'scripts/migrate': 'src/scripts/migrate.ts',
     'scripts/seed': 'src/scripts/seed.ts',
     'scripts/promote-admin': 'src/scripts/promote-admin.ts',
-    'scripts/import-supabase': 'src/scripts/import-supabase.ts',
+    'scripts/reset': 'src/scripts/reset.ts',
   },
   format: ['esm'],
   platform: 'node',
