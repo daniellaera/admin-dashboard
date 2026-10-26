@@ -40,7 +40,12 @@ export function toPublicProfile(user: Pick<UserRow, 'id'>, profile: ProfileRow):
   };
 }
 
-export function toMe(user: UserRow, profile: ProfileRow, providers: AuthProvider[]): Me {
+export function toMe(
+  user: UserRow,
+  profile: ProfileRow,
+  providers: AuthProvider[],
+  sudoUntil: Date | null,
+): Me {
   return {
     id: user.id,
     email: user.email,
@@ -49,6 +54,7 @@ export function toMe(user: UserRow, profile: ProfileRow, providers: AuthProvider
     hasPassword: user.passwordHash !== null,
     providers,
     createdAt: user.createdAt.toISOString(),
+    sudoUntil: sudoUntil ? sudoUntil.toISOString() : null,
     profile: toPublicProfile(user, profile),
   };
 }

@@ -2,16 +2,8 @@ import { z } from 'zod';
 import { CONFIGURABLE_NOTIFICATION_TYPES } from '../constants.ts';
 import { cursorQuerySchema } from './common.ts';
 
-const configurableType = z.enum(
-  CONFIGURABLE_NOTIFICATION_TYPES as [string, ...string[]] as unknown as [
-    'comment',
-    'like',
-    'new_post',
-  ],
-);
-
 export const notificationPreferenceSchema = z.strictObject({
-  type: configurableType,
+  type: z.enum(CONFIGURABLE_NOTIFICATION_TYPES),
   inApp: z.boolean(),
   email: z.boolean(),
 });

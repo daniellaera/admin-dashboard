@@ -18,8 +18,9 @@ const envSchema = z.object({
   COOKIE_SECURE: z.enum(['auto', 'true', 'false']).default('auto'),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
-  SEED_ADMIN_EMAIL: z.email().optional(),
-  SEED_ADMIN_PASSWORD: z.string().min(8).optional(),
+  /** First boot only: creates the single OWNER account when none exists (ADR-013). */
+  OWNER_EMAIL: z.email().optional(),
+  OWNER_PASSWORD: z.string().min(8).optional(),
 
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().positive().default(1025),

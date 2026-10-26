@@ -15,7 +15,8 @@ export const POST_TYPE_OPTIONS: readonly { value: PostType; label: string }[] = 
   { value: 'TECH', label: 'Tech' },
 ];
 
-export const PROGRAMMING_LANGUAGES = [
+/** Default skills catalog (the 15 languages of the original app). Admins can extend it. */
+export const DEFAULT_SKILLS = [
   { value: 'python', label: 'Python' },
   { value: 'typescript', label: 'TypeScript' },
   { value: 'javascript', label: 'JavaScript' },
@@ -32,13 +33,9 @@ export const PROGRAMMING_LANGUAGES = [
   { value: 'rust', label: 'Rust' },
   { value: '.net', label: '.NET' },
 ] as const;
-export const SKILL_VALUES = PROGRAMMING_LANGUAGES.map((l) => l.value) as [
-  (typeof PROGRAMMING_LANGUAGES)[number]['value'],
-  ...(typeof PROGRAMMING_LANGUAGES)[number]['value'][],
-];
-export type Skill = (typeof SKILL_VALUES)[number];
 
-export const POST_TAGS = [
+/** Default tags catalog (the 14 tags of the original app). Admins can extend it. */
+export const DEFAULT_TAGS = [
   { value: 'engineering', label: 'Engineering' },
   { value: 'computerscience', label: 'Computer Science' },
   { value: 'product', label: 'Product' },
@@ -54,24 +51,46 @@ export const POST_TAGS = [
   { value: 'devops', label: 'DevOps' },
   { value: 'cybersecurity', label: 'Cybersecurity' },
 ] as const;
-export const TAG_VALUES = POST_TAGS.map((t) => t.value) as [
-  (typeof POST_TAGS)[number]['value'],
-  ...(typeof POST_TAGS)[number]['value'][],
-];
-export type Tag = (typeof TAG_VALUES)[number];
 
-export const ROLES = ['admin', 'user'] as const;
+/** Allowed shape of a catalog value: lower-case, short, URL-safe-ish (`c++`, `c#`, `.net` included). */
+export const CATALOG_VALUE_PATTERN = /^[a-z0-9.][a-z0-9+#._-]{0,39}$/;
+export const CATALOG_KINDS = ['skills', 'tags'] as const;
+export type CatalogKind = (typeof CATALOG_KINDS)[number];
+
+export const ROLES = ['owner', 'admin', 'user'] as const;
 export type Role = (typeof ROLES)[number];
+/** Roles the owner can assign through the API (never `owner`). */
+export const ASSIGNABLE_ROLES = ['admin', 'user'] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+/** Roles an invitation can carry. */
+export const INVITABLE_ROLES = ['user', 'admin'] as const;
+export type InvitableRole = (typeof INVITABLE_ROLES)[number];
+
+export const REGISTRATION_MODES = ['open', 'invite_only'] as const;
+export type RegistrationMode = (typeof REGISTRATION_MODES)[number];
+
+export const AUDIT_ACTIONS = [
+  'role.change',
+  'user.disable',
+  'user.enable',
+  'user.delete',
+  'invitation.create',
+  'invitation.revoke',
+  'invitation.accept',
+  'settings.update',
+  'catalog.create',
+  'catalog.update',
+  'catalog.delete',
+  'sudo.enter',
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export const NOTIFICATION_TYPES = ['comment', 'like', 'new_post', 'system'] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** Notification types a user may configure (system notifications are always on in-app). */
-export const CONFIGURABLE_NOTIFICATION_TYPES: readonly NotificationType[] = [
-  'comment',
-  'like',
-  'new_post',
-];
+export const CONFIGURABLE_NOTIFICATION_TYPES = ['comment', 'like', 'new_post'] as const;
+export type ConfigurableNotificationType = (typeof CONFIGURABLE_NOTIFICATION_TYPES)[number];
 
 export const AUTH_PROVIDERS = ['github'] as const;
 export type AuthProvider = (typeof AUTH_PROVIDERS)[number];
@@ -83,16 +102,19 @@ export const LIMITS = {
   website: 200,
   company: 100,
   bio: 500,
-  skillsMax: PROGRAMMING_LANGUAGES.length,
+  skillsMax: 20,
   postTitle: 200,
   postContent: 10_000,
   tagsMax: 5,
   comment: 2_000,
   cvText: 1_000,
   cvShort: 100,
+  catalogLabel: 40,
   pageSizeDefault: 10,
   pageSizeMax: 50,
   searchQuery: 100,
+  invitationHours: 72,
+  sudoMinutes: 10,
 } as const;
 
 /**

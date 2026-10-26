@@ -1,5 +1,5 @@
-import type { Role } from '@devconnector/shared';
-import { and, eq, gt, isNull, lt, ne, sql } from 'drizzle-orm';
+import { LIMITS, type Role } from '@devconnector/shared';
+import { and, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { Db } from '../../db/client.ts';
@@ -17,6 +17,8 @@ export interface CurrentUser {
   email: string;
   role: Role;
   emailVerified: boolean;
+  /** Sudo window of the current session (ADR-013), null when not active. */
+  sudoUntil: Date | null;
 }
 
 export interface SessionMeta {
@@ -29,6 +31,8 @@ export interface SessionService {
   resolve(token: string): Promise<{ user: CurrentUser; sessionId: string } | null>;
   delete(sessionId: string): Promise<void>;
   deleteAllForUser(userId: number, exceptSessionId?: string): Promise<void>;
+  /** Opens the sudo window on one session; returns its end. */
+  grantSudo(sessionId: string): Promise<Date>;
   purgeExpired(): Promise<number>;
 }
 
@@ -54,6 +58,7 @@ export function createSessionService(db: Db, env: Pick<Env, 'SESSION_TTL_DAYS'>)
         .select({
           sessionId: sessions.id,
           lastSeenAt: sessions.lastSeenAt,
+          sudoUntil: sessions.sudoUntil,
           userId: users.id,
           email: users.email,
           role: users.role,
@@ -80,6 +85,8 @@ export function createSessionService(db: Db, env: Pick<Env, 'SESSION_TTL_DAYS'>)
           email: row.email,
           role: row.role,
           emailVerified: row.emailVerifiedAt !== null,
+          sudoUntil:
+            row.sudoUntil && row.sudoUntil.getTime() > now.getTime() ? row.sudoUntil : null,
         },
       };
     },
@@ -96,6 +103,12 @@ export function createSessionService(db: Db, env: Pick<Env, 'SESSION_TTL_DAYS'>)
             ? and(eq(sessions.userId, userId), ne(sessions.id, exceptSessionId))
             : eq(sessions.userId, userId),
         );
+    },
+
+    async grantSudo(sessionId) {
+      const until = new Date(Date.now() + LIMITS.sudoMinutes * 60 * 1000);
+      await db.update(sessions).set({ sudoUntil: until }).where(eq(sessions.id, sessionId));
+      return until;
     },
 
     async purgeExpired() {
@@ -134,6 +147,3 @@ export function clearSessionCookie(c: Context<AppEnv>, env: Pick<Env, 'cookieSec
     sameSite: 'Lax',
   });
 }
-
-/** Re-exported for modules that need to detect users without a verified e-mail. */
-export const unverified = () => isNull(users.emailVerifiedAt);

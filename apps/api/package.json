@@ -23,7 +23,7 @@
     "db:seed": "tsx --env-file-if-exists=../../.env src/scripts/seed.ts",
     "db:reset": "tsx --env-file-if-exists=../../.env src/scripts/reset.ts",
     "db:studio": "drizzle-kit studio",
-    "admin:promote": "tsx --env-file-if-exists=../../.env src/scripts/promote-admin.ts",
+    "owner:create": "tsx --env-file-if-exists=../../.env src/scripts/owner-create.ts",
     "import:supabase": "tsx --env-file-if-exists=../../.env src/scripts/import-supabase.ts"
   },
   "dependencies": {

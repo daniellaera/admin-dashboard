@@ -6,6 +6,24 @@ Legend — **Src**: ✔ committed · ✚ uncommitted local addition · ⚠ mock/
 
 ---
 
+## 0. Roles in the rebuild (ADR-013, D-017 — `[USER]` amendment)
+
+| ID | Rule | Status |
+|---|---|---|
+| RB-01 | Three roles `owner` / `admin` / `user`; exactly one owner (partial unique index) | ✅ |
+| RB-02 | OWNER bootstrapped once via `OWNER_EMAIL`/`OWNER_PASSWORD` on first boot or `pnpm owner:create`; never created/transferred from the UI or API | ✅ |
+| RB-03 | OWNER can never be demoted, disabled or deleted (admin API and self-deletion → 403) | ✅ matrix |
+| RB-04 | Only OWNER grants/revokes ADMIN (promote a verified user, or admin invitation); never the `owner` role | ✅ matrix |
+| RB-05 | ADMIN: moderation, catalog, disable/delete USER accounts, invite users; never changes roles, never acts on ADMIN/OWNER | ✅ matrix |
+| RB-06 | Registration mode setting `open` (default) / `invite_only`; invite-only requires a single-use 72 h invitation (user invitations by OWNER/ADMIN) | ✅ |
+| RB-07 | Admin invitations (OWNER + sudo): accepting creates the account or signs in an existing one, then grants ADMIN | ✅ |
+| RB-08 | Sudo mode: role changes and admin invitations require the OWNER's password re-entry (`POST /auth/sudo`, 10 min) | ✅ |
+| RB-09 | Role changes notify the user in-app (`system` notification) and by e-mail | ✅ |
+| RB-10 | Audit log for role changes, invitations, disable/enable, delete, settings, catalog, sudo; readable by OWNER/ADMIN | ✅ |
+| RB-11 | Disabling a user or changing a role revokes all their sessions immediately | ✅ |
+| RB-12 | Skills/tags catalog managed by ADMIN/OWNER, seeded with the legacy 15 + 14 entries, enforced on profile/post writes | ✅ |
+| RB-13 | Web UI for all of the above (users table with role/disable, invitations, settings, catalog, audit, sudo prompt) | ⬜ batch 7 |
+
 ## 1. Actors and roles (as-is)
 
 | ID | Actor | What they can do today | Notes |
@@ -20,76 +38,74 @@ Tables are PascalCase quoted identifiers created by Prisma migrations (`main:bac
 
 | ID | Entity | Columns (type, constraints) | Relations | Status |
 |---|---|---|---|---|
-| DM-01 | `Profile` | `id` serial PK · `createdAt` · `updatedAt` · `avatarUrl` text? (storage object path) · `username` text? · `website` text? · `company` text? · `bio` text? · `authorEmail` text **unique** (identity key = Supabase user email) · `isPublic` bool default false (exists since the init migration but unused by committed code; ✚ exposed by the local edits) | 1-n posts, experiences, comments, likes, educations, programmingLanguages | ⬜ |
-| DM-02 | `ProgrammingLanguage` | `id` serial PK (+ redundant unique) · `value` text · `label` text · `profileId` FK cascade | n-1 Profile (a "skills" multi-select; rows are re-created on every profile update) | ⬜ |
-| DM-03 | `Post` | `id` · `createdAt` · `updatedAt` · `type` enum `PostType` default `FUNNY` · `title` text · `content` text · `published` bool default false · `viewCount` int default 0 (never incremented) · `profileId` FK cascade | 1-n comments, likes, tags | ⬜ |
-| DM-04 | `Tags` | `id` (+ redundant unique) · `value` · `label` · `postId` FK cascade | n-1 Post (tag multi-select, re-created on every update) | ⬜ |
-| DM-05 | `Comment` | `id` · `createdAt` · `text` · `postId` FK cascade · `profileId` FK cascade | — | ⬜ |
-| DM-06 | `Like` | `id` · `createdAt` · `postId` FK · `profileId` FK | **no unique (postId, profileId)** — uniqueness enforced in code only | ⬜ |
-| DM-07 | `Experiences` | `id` · `title` · `description` · `company` · `location` · `from` date · `to` date · `current` bool default true · `createdAt` · `updatedAt` · `profileId` FK | — | ⬜ |
-| DM-08 | `Education` | `id` · `school` · `description` · `degree` · `fieldOfStudy` · `from` date · `to` date · `current` bool default true · `createdAt` · `updatedAt` · `profileId` FK | — | ⬜ |
-| DM-09 | enum `PostType` | `FUNNY, TECH, RANDOM, NEWS, SERIOUS` (UI labels/order: Funny, Serious, News, Random, Tech — `constants.ts:11-17`) | — | ⬜ |
-| DM-10 | Option list: programming languages (15, frontend constant `types/programmingLanguage.ts`) | python/Python, typescript/TypeScript, javascript/JavaScript, ruby/Ruby, java/Java, php/PHP, golang/GoLang, c++/C++, c#/C#, clojure/Clojure, scala/Scala, kotlin/Kotlin, solidity/Solidity, rust/Rust, .net/.NET | source of the skills multi-select | ⬜ (shared package constant) |
-| DM-11 | Option list: post tags (14, `types/tag.ts`) | engineering/Engineering, computerscience/Computer Science, product/Product, productivity/Productivity, algorithms/Algorithms, joblife/Job Life, tech/Tech, security/Security, industrial/Industrial, it/IT, hardware/Hardware, programming/Programming, devops/DevOps, cybersecurity/Cybersecurity | source of the tags multi-select | ⬜ |
-| DM-12 | Supabase `auth.users` (external) | email, `encrypted_password` (bcrypt), confirmed flags, `app_metadata.provider` (`email` / `github`), identities | Linked to `Profile` **only by email string** | ⬜ (→ own `users` table; import script keeps bcrypt hashes) |
-| DM-13 | Supabase `storage.objects`, bucket `images` (external) | avatar files named `${Math.random()}.${ext}` at bucket root, public read, anonymous write, never deleted | `Profile.avatarUrl` stores the object path | ⬜ (→ local volume) |
-| DM-14 | Novu subscribers (external) | subscriberId = `Profile.id`, email | created on profile creation, deleted on profile deletion | ⬜ (→ `notifications` tables) |
-| DM-15 | Seed data | 4 profiles (`hulk@marvel.com` "Hulk Green", `matthewlaing@gmail.com` "Matthew Laing", `ken@jimmy.io` "Ken Jimmy", `randysmith@gmail.com` "Randy Smith") with 6 published lorem-ipsum posts (`prisma/seed.ts`) | — | ⬜ (seed users with passwords + admin for the new auth) |
-
+| DM-01 | `Profile` | `id` serial PK · `createdAt` · `updatedAt` · `avatarUrl` text? (storage object path) · `username` text? · `website` text? · `company` text? · `bio` text? · `authorEmail` text **unique** (identity key = Supabase user email) · `isPublic` bool default false (exists since the init migration but unused by committed code; ✚ exposed by the local edits) | 1-n posts, experiences, comments, likes, educations, programmingLanguages | ✅ |
+| DM-02 | `ProgrammingLanguage` | `id` serial PK (+ redundant unique) · `value` text · `label` text · `profileId` FK cascade | n-1 Profile (a "skills" multi-select; rows are re-created on every profile update) | ✅ |
+| DM-03 | `Post` | `id` · `createdAt` · `updatedAt` · `type` enum `PostType` default `FUNNY` · `title` text · `content` text · `published` bool default false · `viewCount` int default 0 (never incremented) · `profileId` FK cascade | 1-n comments, likes, tags | ✅ |
+| DM-04 | `Tags` | `id` (+ redundant unique) · `value` · `label` · `postId` FK cascade | n-1 Post (tag multi-select, re-created on every update) | ✅ |
+| DM-05 | `Comment` | `id` · `createdAt` · `text` · `postId` FK cascade · `profileId` FK cascade | — | ✅ |
+| DM-06 | `Like` | `id` · `createdAt` · `postId` FK · `profileId` FK | **no unique (postId, profileId)** — uniqueness enforced in code only | ✅ |
+| DM-07 | `Experiences` | `id` · `title` · `description` · `company` · `location` · `from` date · `to` date · `current` bool default true · `createdAt` · `updatedAt` · `profileId` FK | — | ✅ |
+| DM-08 | `Education` | `id` · `school` · `description` · `degree` · `fieldOfStudy` · `from` date · `to` date · `current` bool default true · `createdAt` · `updatedAt` · `profileId` FK | — | ✅ |
+| DM-09 | enum `PostType` | `FUNNY, TECH, RANDOM, NEWS, SERIOUS` (UI labels/order: Funny, Serious, News, Random, Tech — `constants.ts:11-17`) | — | ✅ |
+| DM-10 | Option list: programming languages (15, frontend constant `types/programmingLanguage.ts`) | python/Python, typescript/TypeScript, javascript/JavaScript, ruby/Ruby, java/Java, php/PHP, golang/GoLang, c++/C++, c#/C#, clojure/Clojure, scala/Scala, kotlin/Kotlin, solidity/Solidity, rust/Rust, .net/.NET | source of the skills multi-select | ✅ (shared package constant) |
+| DM-11 | Option list: post tags (14, `types/tag.ts`) | engineering/Engineering, computerscience/Computer Science, product/Product, productivity/Productivity, algorithms/Algorithms, joblife/Job Life, tech/Tech, security/Security, industrial/Industrial, it/IT, hardware/Hardware, programming/Programming, devops/DevOps, cybersecurity/Cybersecurity | source of the tags multi-select | ✅ |
+| DM-12 | Supabase `auth.users` (external) | email, `encrypted_password` (bcrypt), confirmed flags, `app_metadata.provider` (`email` / `github`), identities | Linked to `Profile` **only by email string** | ✅ (→ own `users` table; import script keeps bcrypt hashes) |
+| DM-13 | Supabase `storage.objects`, bucket `images` (external) | avatar files named `${Math.random()}.${ext}` at bucket root, public read, anonymous write, never deleted | `Profile.avatarUrl` stores the object path | ✅ (→ local volume) |
+| DM-14 | Novu subscribers (external) | subscriberId = `Profile.id`, email | created on profile creation, deleted on profile deletion | ✅ (→ `notifications` tables) |
+| DM-15 | Seed data | 4 profiles (`hulk@marvel.com` "Hulk Green", `matthewlaing@gmail.com` "Matthew Laing", `ken@jimmy.io` "Ken Jimmy", `randysmith@gmail.com` "Randy Smith") with 6 published lorem-ipsum posts (`prisma/seed.ts`) | — | ✅ (seed users with passwords + admin for the new auth) |
 ## 3. Backend HTTP API (as-is, Express, base `/api/v1`)
 
 **Auth** column = what the server actually enforces (confirmed by live probing, `appendix/run-as-is.md` §3.2). `JWT` = `auth` middleware (`middleware/auth.ts`): verifies an HS256 Supabase access token found in `Authorization: <anything> <token>`; it does **not** attach the user to the request, so no handler knows who is calling.
 
 | ID | Method & path | Auth | Request | Response / behaviour | Status |
 |---|---|---|---|---|---|
-| API-01 | `GET /` and `GET /api/v1` | none | — | `{message: "🦄…"}` / `{message: "API - 👋🌎🌍🌏"}` (used by the 4 existing tests) | ⬜ (→ `/health`, `/ready`) |
+| API-01 | `GET /` and `GET /api/v1` | none | — | `{message: "🦄…"}` / `{message: "API - 👋🌎🌍🌏"}` (used by the 4 existing tests) | ✅ (→ `/health`, `/ready`) |
 | API-02 | `GET /api/v1/emojis` | none | — | `["😀","😳","🙄"]` — starter-template leftover, unused by the UI | ➖ drop (starter leftover; no UI usage) |
-| API-03 | `GET /posts` | none | — | all **published** posts, newest first, each with `profile{username,authorEmail,avatarUrl}`, `comments[{profile(full), text}]`, `likes[]`, `tags[]`. No pagination (client slices 5/page). | ⬜ |
-| API-04 | `GET /posts/postsByProfileId/:profileId` | none | — | all posts of a profile **including drafts** (used by admin Posts list) | ⬜ (owner-only) |
-| API-05 | `GET /posts/post/:id` | none | — | one post incl. drafts, with `profile{id,username,authorEmail,avatarUrl}`, `comments`, `tags{value,label}`; on error returns 200 `{error}` | ⬜ (drafts owner-only) |
-| API-06 | `POST /posts/create` | JWT (identity not checked) | `{title, content, type, published, profileId, tags:[{value,label}]}` | creates post for **body-supplied** `profileId`; `tags` via buggy `connectOrCreate` (AUDIT CQ-01); 400 `{error:'Unauthorized'}` on any exception | ⬜ (profileId from session) |
-| API-07 | `PUT /posts/updateById/:postId` | **none** (verified) | `{title, content, type, published, tags}` (UI sends the whole loaded post object) | deletes all tags of the post then updates; same tag bug | ⬜ (owner/admin) |
-| API-08 | `DELETE /posts/deleteById/:id` | **none** (verified) | — | deletes post (cascades comments/likes/tags) | ⬜ (owner/admin) |
-| API-09 | `GET /profile` | none | — | **all** profiles (every email) with `programmingLanguages{label}`; `isPublic` ignored. Feeds the Developers page. | ⬜ (public profiles only, no email for strangers) |
-| API-10 | `GET /profile/findProfileByEmail/:authorEmail` | none | — | profile with `experiences`, `programmingLanguages{value,label}`; `null` if none | ⬜ (→ `GET /me`) |
-| API-11 | `POST /profile/create` | **none** | `{authorEmail}` | creates a profile for any email (called by the SPA after sign-up and after *requesting* a magic link) + Novu `subscribers.identify` | ⬜ (server-side on registration) |
-| API-12 | `POST /profile/createProfileBySocial/:email` | **none** | — | idempotent get-or-create (called by the SPA on every GitHub `onAuthStateChange`) | ⬜ (server-side in OAuth callback) |
-| API-13 | `DELETE /profile/delete/:profileId` | token read but **not** required for the delete | `Authorization: token <jwt>` | deletes the profile by id (cascade: posts, comments, likes, experiences, educations, skills), then deletes the **caller's** Supabase auth user (`auth.admin.deleteUser`) and the Novu subscriber | ⬜ (self or admin; delete own user + sessions + avatar file) |
-| API-14 | `PUT /profile/updateById/:profileId` | **none** (verified) | `{username, website, company, bio, avatarUrl, programmingLanguages:[{value,label}]}` (✚ `isPublic`; UI sends the whole loaded profile) | deletes all skills then updates profile with buggy `connectOrCreate` | ⬜ (self only) |
+| API-03 | `GET /posts` | none | — | all **published** posts, newest first, each with `profile{username,authorEmail,avatarUrl}`, `comments[{profile(full), text}]`, `likes[]`, `tags[]`. No pagination (client slices 5/page). | ✅ |
+| API-04 | `GET /posts/postsByProfileId/:profileId` | none | — | all posts of a profile **including drafts** (used by admin Posts list) | ✅ (owner-only) |
+| API-05 | `GET /posts/post/:id` | none | — | one post incl. drafts, with `profile{id,username,authorEmail,avatarUrl}`, `comments`, `tags{value,label}`; on error returns 200 `{error}` | ✅ (drafts owner-only) |
+| API-06 | `POST /posts/create` | JWT (identity not checked) | `{title, content, type, published, profileId, tags:[{value,label}]}` | creates post for **body-supplied** `profileId`; `tags` via buggy `connectOrCreate` (AUDIT CQ-01); 400 `{error:'Unauthorized'}` on any exception | ✅ (profileId from session) |
+| API-07 | `PUT /posts/updateById/:postId` | **none** (verified) | `{title, content, type, published, tags}` (UI sends the whole loaded post object) | deletes all tags of the post then updates; same tag bug | ✅ (owner/admin) |
+| API-08 | `DELETE /posts/deleteById/:id` | **none** (verified) | — | deletes post (cascades comments/likes/tags) | ✅ (owner/admin) |
+| API-09 | `GET /profile` | none | — | **all** profiles (every email) with `programmingLanguages{label}`; `isPublic` ignored. Feeds the Developers page. | ✅ (public profiles only, no email for strangers) |
+| API-10 | `GET /profile/findProfileByEmail/:authorEmail` | none | — | profile with `experiences`, `programmingLanguages{value,label}`; `null` if none | ✅ (→ `GET /me`) |
+| API-11 | `POST /profile/create` | **none** | `{authorEmail}` | creates a profile for any email (called by the SPA after sign-up and after *requesting* a magic link) + Novu `subscribers.identify` | ✅ (server-side on registration) |
+| API-12 | `POST /profile/createProfileBySocial/:email` | **none** | — | idempotent get-or-create (called by the SPA on every GitHub `onAuthStateChange`) | ✅ (server-side in OAuth callback) |
+| API-13 | `DELETE /profile/delete/:profileId` | token read but **not** required for the delete | `Authorization: token <jwt>` | deletes the profile by id (cascade: posts, comments, likes, experiences, educations, skills), then deletes the **caller's** Supabase auth user (`auth.admin.deleteUser`) and the Novu subscriber | ✅ (self or admin; delete own user + sessions + avatar file) |
+| API-14 | `PUT /profile/updateById/:profileId` | **none** (verified) | `{username, website, company, bio, avatarUrl, programmingLanguages:[{value,label}]}` (✚ `isPublic`; UI sends the whole loaded profile) | deletes all skills then updates profile with buggy `connectOrCreate` | ✅ (self only) |
 | API-15 | `GET /experience` | none | — | all experiences of everyone (unused by UI) | ➖ drop as global list; keep per-profile |
-| API-16 | `POST /experience/create` | **none** | `{title, description, company, location, from, to, current, profileId}` (`from`/`to` `yyyy-mm-dd` from `<input type=date>` → `parseISO`) | creates | ⬜ (self only) |
-| API-17 | `GET /experience/experienceByProfileId/:profileId` | none | — | list | ⬜ |
+| API-16 | `POST /experience/create` | **none** | `{title, description, company, location, from, to, current, profileId}` (`from`/`to` `yyyy-mm-dd` from `<input type=date>` → `parseISO`) | creates | ✅ (self only) |
+| API-17 | `GET /experience/experienceByProfileId/:profileId` | none | — | list | ✅ |
 | API-18 | `GET /education` | none | — | all educations (unused) | ➖ same as API-15 |
-| API-19 | `POST /education/create` | **none** | `{school, description, degree, fieldOfStudy, from, to, current, profileId}` | creates | ⬜ (self only) |
-| API-20 | `GET /education/educationByProfileId/:profileId` | none | — | list | ⬜ |
-| API-21 | `POST /comments/create` | **none** (verified) | `{text, profileId, postId}` | creates (any profileId) | ⬜ (profileId from session) |
-| API-22 | `GET /comments/commentsByPostId/:postId` | none | — | newest first, each with the **full** commenter profile | ⬜ (public subset of profile) |
-| API-23 | `POST /likes/create` | **none** (verified) | `{profileId, postId}` | 400 `{error:'You cannot like a post twice'}` if that profile already liked; else creates. No unlike. | ⬜ (keep "like once"; add unlike as toggle) |
-| API-24 | 404 fallback | — | — | JSON `{message, stack}` (stack hidden only when `NODE_ENV=production`) | ⬜ (problem+json, no stack) |
+| API-19 | `POST /education/create` | **none** | `{school, description, degree, fieldOfStudy, from, to, current, profileId}` | creates | ✅ (self only) |
+| API-20 | `GET /education/educationByProfileId/:profileId` | none | — | list | ✅ |
+| API-21 | `POST /comments/create` | **none** (verified) | `{text, profileId, postId}` | creates (any profileId) | ✅ (profileId from session) |
+| API-22 | `GET /comments/commentsByPostId/:postId` | none | — | newest first, each with the **full** commenter profile | ✅ (public subset of profile) |
+| API-23 | `POST /likes/create` | **none** (verified) | `{profileId, postId}` | 400 `{error:'You cannot like a post twice'}` if that profile already liked; else creates. No unlike. | ✅ (keep "like once"; add unlike as toggle) |
+| API-24 | 404 fallback | — | — | JSON `{message, stack}` (stack hidden only when `NODE_ENV=production`) | ✅ (problem+json, no stack) |
 | API-25 | ✚ `router.use("/fetchByDateArrow/:postId", auth)` | — | — | WIP-only line that mounts the auth middleware on a path with no handler | ➖ dead |
 
 Missing today but implied by the UI or the brief (new in the rebuild): update/delete experience & education (UI only adds), unlike, server-side pagination, `GET /me`, users administration, notification inbox, email/password management, password reset, email verification.
 
-**Privacy rule (D-013 Q4, `[USER]`):** no public endpoint or page ever returns or renders a user's e-mail. Author cards and public profiles expose `displayName` (= `username`, else `Developer #<id>`) and the avatar only. E-mails appear only in `GET /auth/me`, `GET /me/*` (owner) and `GET /admin/*` (admins). Every endpoint returning user data is covered by the authorization matrix (anonymous / other user / owner / admin) in the integration tests — this is checklist item **PRIV-01** ⬜.
+**Privacy rule (D-013 Q4, `[USER]`):** no public endpoint or page ever returns or renders a user's e-mail. Author cards and public profiles expose `displayName` (= `username`, else `Developer #<id>`) and the avatar only. E-mails appear only in `GET /auth/me`, `GET /me/*` (owner) and `GET /admin/*` (admins). Every endpoint returning user data is covered by the authorization matrix (anonymous / other user / owner / admin) in the integration tests — this is checklist item **PRIV-01** ✅ (authz-matrix.test.ts, PRIV-01 block).
 
 ## 4. Authentication & account flows (as-is)
 
 | ID | Flow | As-is behaviour (evidence) | Target (brief) | Status |
 |---|---|---|---|---|
-| AU-01 | Sign up (email + password) | Signin page in "Register" mode: `supabase.auth.signUp` then `POST /profile/create {authorEmail}` from the browser (`authApi.ts:58-68`); Supabase sends its confirmation e-mail (project setting). Form pre-filled with `janedane@gmail.com` / `123456` (`Signin.tsx:61-63`). Validation: both fields `required` only, no email pattern. On success navigate to `from` or `/`. | own `/auth/register` → user + profile in one transaction, argon2id, verification e-mail over SMTP | ⬜ |
-| AU-02 | Sign in (email + password) | `signInWithPassword`; on success emits socket `new-user-add` (✚) and navigates to `location.state.from` or `/` (`Signin.tsx:93-105`); error toast shows the raw error (`AuthApiError: Invalid login credentials`). Password field has a reveal/mask eye toggle. Submit disabled until valid. | `/auth/login` → DB session cookie (httpOnly/Secure/SameSite), rate-limited, generic error message | ⬜ |
-| AU-03 | Magic link | Second tab: `signInWithOtp({email})` **then immediately** `POST /profile/create` for that email (`authApi.ts:41-48`); toast title "Account confirmed." description "Check your email for the login link"; navigates away | e-mail login link over SMTP (signed single-use token); profile created only after the link is used | ⬜ |
-| AU-04 | GitHub OAuth | `signInWithOAuth({provider:'github'})` (not awaited, catch unreachable); on every `onAuthStateChange` with `app_metadata.provider === 'github'` the SPA calls `POST /profile/createProfileBySocial/:email` (`AuthProvider.tsx:26-29`). Google and Twitter buttons exist but only `console.log` (`Signin.tsx:138-152`). | GitHub OAuth App via `arctic`; Google/Twitter buttons dropped (never worked) | ⬜ |
-| AU-05 | Session persistence | supabase-js stores access+refresh tokens in `localStorage` (`sb-<ref>-auth-token`); `AuthProvider` renders **nothing** until `getSession()` resolves | server session table + cookie; `GET /me` on boot with a loading skeleton | ⬜ |
-| AU-06 | Sign out | `supabase.auth.signOut()`; toast "Signed out"; `localStorage.removeItem('user')` (leftover); from the admin ProfileMenu it navigates to `/signin`, from the landing Nav it stays | `POST /auth/logout` deletes the session row + cookie; same navigation | ⬜ |
+| AU-01 | Sign up (email + password) | Signin page in "Register" mode: `supabase.auth.signUp` then `POST /profile/create {authorEmail}` from the browser (`authApi.ts:58-68`); Supabase sends its confirmation e-mail (project setting). Form pre-filled with `janedane@gmail.com` / `123456` (`Signin.tsx:61-63`). Validation: both fields `required` only, no email pattern. On success navigate to `from` or `/`. | own `/auth/register` → user + profile in one transaction, argon2id, verification e-mail over SMTP | ✅ |
+| AU-02 | Sign in (email + password) | `signInWithPassword`; on success emits socket `new-user-add` (✚) and navigates to `location.state.from` or `/` (`Signin.tsx:93-105`); error toast shows the raw error (`AuthApiError: Invalid login credentials`). Password field has a reveal/mask eye toggle. Submit disabled until valid. | `/auth/login` → DB session cookie (httpOnly/Secure/SameSite), rate-limited, generic error message | ✅ |
+| AU-03 | Magic link | Second tab: `signInWithOtp({email})` **then immediately** `POST /profile/create` for that email (`authApi.ts:41-48`); toast title "Account confirmed." description "Check your email for the login link"; navigates away | e-mail login link over SMTP (signed single-use token); profile created only after the link is used | ✅ |
+| AU-04 | GitHub OAuth | `signInWithOAuth({provider:'github'})` (not awaited, catch unreachable); on every `onAuthStateChange` with `app_metadata.provider === 'github'` the SPA calls `POST /profile/createProfileBySocial/:email` (`AuthProvider.tsx:26-29`). Google and Twitter buttons exist but only `console.log` (`Signin.tsx:138-152`). | GitHub OAuth App via `arctic`; Google/Twitter buttons dropped (never worked) | ✅ |
+| AU-05 | Session persistence | supabase-js stores access+refresh tokens in `localStorage` (`sb-<ref>-auth-token`); `AuthProvider` renders **nothing** until `getSession()` resolves | server session table + cookie; `GET /me` on boot with a loading skeleton | ✅ |
+| AU-06 | Sign out | `supabase.auth.signOut()`; toast "Signed out"; `localStorage.removeItem('user')` (leftover); from the admin ProfileMenu it navigates to `/signin`, from the landing Nav it stays | `POST /auth/logout` deletes the session row + cookie; same navigation | ✅ |
 | AU-07 | Route guard | `<RequireAuth>` redirects to `/signin` with `state.from` when there is no user (`RequireAuth.tsx:12-15`); `/signin` is reachable while logged in | same UX + role guard for admin-only pages; redirect away from `/signin` when logged in | ⬜ |
-| AU-08 | Password change | ⚠ `PasswordForm` ("Change password": New Password + Confirm Password, mismatch message "Your passwords do no match", no min length) calls `updatePassword()` which is a 2 s `setTimeout` returning `true` (`authApi.ts:108-114`) — **nothing is changed**; toast "Your password has been updated" | real `POST /auth/password` (current + new, strength rule) | ⬜ |
-| AU-09 | Delete account ("Danger zone") | tab with red "Delete Account" → `AlertDialog` "Delete Profile" / "Are you sure? You can't undo this action afterwards." / Cancel / Delete → `DELETE /profile/delete/:id` with the access token → toast "Your profile has been deleted" (top) → `signOut()` (`DangerZone.tsx:28-45`). Server deletes the profile row, then the caller's Supabase user, then the Novu subscriber | same UX; server deletes user, sessions, profile, avatar file in one transaction | ⬜ |
-| AU-10 | Toasts on auth events | "Signed in" / "Signed out" info toasts from `onAuthStateChange` | keep | ⬜ |
-| AU-11 | Password reset / forgot password | **absent** | required by brief (SMTP) | ⬜ |
-| AU-12 | E-mail verification | delegated to Supabase (project setting, not visible in code) | required by brief (SMTP) | ⬜ |
-| AU-13 | RBAC | **absent** (see ROLE-02) | `admin` / `user`; first seeded user is admin | ⬜ |
-
+| AU-08 | Password change | ⚠ `PasswordForm` ("Change password": New Password + Confirm Password, mismatch message "Your passwords do no match", no min length) calls `updatePassword()` which is a 2 s `setTimeout` returning `true` (`authApi.ts:108-114`) — **nothing is changed**; toast "Your password has been updated" | real `POST /auth/password` (current + new, strength rule) | ✅ |
+| AU-09 | Delete account ("Danger zone") | tab with red "Delete Account" → `AlertDialog` "Delete Profile" / "Are you sure? You can't undo this action afterwards." / Cancel / Delete → `DELETE /profile/delete/:id` with the access token → toast "Your profile has been deleted" (top) → `signOut()` (`DangerZone.tsx:28-45`). Server deletes the profile row, then the caller's Supabase user, then the Novu subscriber | same UX; server deletes user, sessions, profile, avatar file in one transaction | ✅ |
+| AU-10 | Toasts on auth events | "Signed in" / "Signed out" info toasts from `onAuthStateChange` | keep | ✅ |
+| AU-11 | Password reset / forgot password | **absent** | required by brief (SMTP) | ✅ |
+| AU-12 | E-mail verification | delegated to Supabase (project setting, not visible in code) | required by brief (SMTP) | ✅ |
+| AU-13 | RBAC | **absent** (see ROLE-02) | `admin` / `user`; first seeded user is admin | ✅ |
 ## 5. Storage — avatars (as-is)
 
 | ID | Feature | As-is | Target | Status |
@@ -180,8 +196,8 @@ Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeSc
 | ID | Feature | As-is | Decision |
 |---|---|---|---|
 | MK-01 | Users administration (`/admin/users*`): table, search, create/edit form (first/last name, role, disabled), delete | in-memory array of 11 fake users, `setTimeout` promises; add/update/delete never change the list (`api/userApi.ts`) | ⬜ implement for real, **admin-only**, over the new `users` table (role, disabled flag) — STOP question |
-| MK-02 | Dashboard stats (count, by role, by status, recently added/updated) | computed from the fake array ("Recently Added" shows the 3 **oldest**) | ⬜ real counts (users, posts, comments, likes; recent sign-ups) |
-| MK-03 | Password update form | fake success after 2 s | ⬜ real |
+| MK-02 | Dashboard stats (count, by role, by status, recently added/updated) | computed from the fake array ("Recently Added" shows the 3 **oldest**) | ✅ API `/admin/stats` (UI in batch 7) — real counts (users, posts, comments, likes; recent sign-ups) |
+| MK-03 | Password update form | fake success after 2 s | ✅ API `PUT /auth/password` (UI in batch 7) |
 | MK-04 | `fetchAuthUser` ("John Smith") | never called | ➖ unused |
 | MK-05 | Google / Twitter sign-in buttons | `console.log` only | ➖ drop (would need new OAuth apps; brief allows GitHub only) |
 | MK-06 | "Follow"/"Connect" button on developer cards | no handler, no backend concept | ➖ drop (no follow model exists; re-add only with a real feature) |
@@ -199,8 +215,8 @@ Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeSc
 | OPS-01 | Containers | backend `node:16-bullseye-slim` multi-stage, frontend `node:17-alpine` → `nginx:1.19` serving the CRA build with SPA fallback + gzip. **Neither image builds any more** (`appendix/run-as-is.md` §3.4) | `node:26-alpine` multi-arch images, compose for dev and prod | ⬜ |
 | OPS-02 | Deployment | Fly.io apps `devconnector-backend` (8080) and `devconnector-frontend` (80), TCP checks, force HTTPS | target-agnostic compose behind Nginx Proxy Manager | ⬜ |
 | OPS-03 | CI | GitHub Actions: on every push, path-filtered `flyctl deploy` of backend and/or frontend; no tests | GitHub + Gitea Actions: lint, typecheck, test, build, multi-arch image | ⬜ |
-| OPS-04 | DB migrations | Prisma migrate run manually from a laptop against Supabase (README) | versioned SQL migrations run by the API on start (or a one-shot job) | ⬜ |
-| OPS-05 | Seed | `prisma db seed` | `pnpm db:seed` (dev) | ⬜ |
+| OPS-04 | DB migrations | Prisma migrate run manually from a laptop against Supabase (README) | versioned SQL migrations run by the API on start (or a one-shot job) | ✅ |
+| OPS-05 | Seed | `prisma db seed` | `pnpm db:seed` (dev) | ✅ |
 | OPS-06 | Logs / health | `morgan('dev')`, `console.log`; no health endpoint | pino, `/health`, `/ready` | ⬜ |
 
 ## 13. Uncommitted feature edits extracted from the WIP snapshot (D-014, `[USER]`-requested)

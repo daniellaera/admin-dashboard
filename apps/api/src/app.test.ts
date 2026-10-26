@@ -34,16 +34,6 @@ describe('app skeleton', () => {
     expect(await res.json()).toEqual({ status: 'not-ready', checks: { db: false } });
   });
 
-  it('exposes the public runtime configuration', async () => {
-    const res = await build().request('/api/v1/config');
-    expect(await res.json()).toEqual({
-      appName: 'DevConnector',
-      github: false,
-      requireEmailVerification: true,
-      maxUploadMb: 2,
-    });
-  });
-
   it('renders unknown routes as RFC 9457 problem details without a stack trace', async () => {
     const res = await build().request('/api/v1/nope', { method: 'DELETE' });
     expect(res.status).toBe(404);

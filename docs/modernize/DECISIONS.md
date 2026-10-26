@@ -114,6 +114,19 @@ Integer serial ids stay (`/posts/:id`, `/admin/posts/:id`); `users.id` takes the
 - Keep the workflow Gitea-compatible as a secondary target; GHCR is the primary registry.
 - **DEPLOY.md = pull-based CD** on a Proxmox **unprivileged** LXC (nesting + keyctl) running Docker: `compose.prod.yml` pulling the public GHCR image (no registry auth), a systemd service + timer running `docker compose pull && docker compose up -d` every 5 minutes, Postgres data and uploads on **bind mounts**, a `pg_dump` backup timer, the Nginx Proxy Manager upstream configuration, and rollback by pinning a `sha` tag in the compose file.
 
+## D-017 — `[USER]` role model amendment (OWNER / ADMIN / USER), invitations, sudo mode, audit log
+*2026-10-26 · received during batch 4; replaces the two-role RBAC of ADR-004 §"RBAC"; specified in ADR-013*
+
+Rules as given by the user (binding):
+- **OWNER**: exactly one (the user). Full access; the only role that can grant or revoke ADMIN. Can never be demoted, disabled or deleted through the app or the API (including its own account deletion). Bootstrapped once via `pnpm owner:create` or `OWNER_EMAIL`/`OWNER_PASSWORD` on first boot; never created or transferred from the UI.
+- **ADMIN**: moderation (posts/comments), skills/tags catalog, disable or delete USER accounts, invite users. Can never change any role and can never act on another ADMIN or on the OWNER.
+- **USER**: dev area only.
+- **Getting a role**: USER by open self-signup with mandatory e-mail verification, or — when the admin setting *registration mode* is `invite_only` (default `open`) — through a single-use 72 h e-mail invitation sent by OWNER/ADMINs. ADMIN only by the OWNER: promote an existing verified USER, or send an admin invitation (single-use, 72 h; accepting creates the account or signs in an existing one, then grants ADMIN).
+- **Safeguards**: every role change requires the OWNER to re-enter the password (sudo mode, 10 min); role changes notify the affected user in-app and by e-mail; every role change, invitation, disable and delete is written to the audit log; disabling a user or demoting an admin revokes all their sessions immediately.
+- **Tests**: every rule in the authorization matrix including the negative cases (ADMIN promoting, ADMIN acting on ADMIN/OWNER, any demote/disable/delete of the OWNER).
+
+Implementation notes: the skills/tags catalog becomes database-backed (seeded with the 15 languages and 14 tags) so admins can manage it; `SEED_ADMIN_*` is replaced by `OWNER_*`; the first migration is regenerated (nothing is deployed yet, D-001 baseline unaffected).
+
 ## D-015 — Dev runtime and API client
 *2026-10-26*
 

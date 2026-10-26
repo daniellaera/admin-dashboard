@@ -2,7 +2,16 @@
  * DTOs returned by the API. The API types its handlers against these; the web app consumes them.
  * Dates are ISO-8601 strings. No DTO outside `Me` and the admin DTOs carries an e-mail (PRIV-01).
  */
-import type { AuthProvider, NotificationType, PostType, Role } from './constants.ts';
+import type {
+  AuditAction,
+  AuthProvider,
+  CatalogKind,
+  InvitableRole,
+  NotificationType,
+  PostType,
+  RegistrationMode,
+  Role,
+} from './constants.ts';
 
 export interface AuthorCard {
   id: number;
@@ -34,6 +43,8 @@ export interface Me {
   hasPassword: boolean;
   providers: AuthProvider[];
   createdAt: string;
+  /** End of the current sudo window for this session, when active (ADR-013). */
+  sudoUntil: string | null;
   profile: PublicProfile;
 }
 
@@ -60,7 +71,7 @@ export interface CommentDto {
   body: string;
   createdAt: string;
   author: AuthorCard;
-  /** True when the current viewer may delete this comment (author or admin). */
+  /** True when the current viewer may delete this comment (author, post author, moderators). */
   canDelete: boolean;
 }
 
@@ -94,7 +105,7 @@ export interface NotificationDto {
   actor: AuthorCard | null;
   postId: number | null;
   commentId: number | null;
-  /** Small, type-specific payload (e.g. post title excerpt). */
+  /** Small, type-specific payload (e.g. post title excerpt, new role). */
   data: Record<string, string | number | boolean | null>;
 }
 
@@ -126,7 +137,50 @@ export interface AdminStats {
   posts: { total: number; published: number };
   comments: number;
   likes: number;
+  pendingInvitations: number;
   recentUsers: AdminUser[];
+}
+
+export interface InvitationDto {
+  id: number;
+  email: string;
+  role: InvitableRole;
+  invitedBy: AuthorCard | null;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+}
+
+/** What the accept page shows before the visitor commits. */
+export interface InvitationPreview {
+  email: string;
+  role: InvitableRole;
+  /** The invitee already has an account: accepting signs them in instead of registering. */
+  existingAccount: boolean;
+  expiresAt: string;
+}
+
+export interface AuditEntryDto {
+  id: number;
+  action: AuditAction;
+  actor: AuthorCard | null;
+  targetUserId: number | null;
+  targetEmail: string | null;
+  data: Record<string, string | number | boolean | null>;
+  ip: string | null;
+  createdAt: string;
+}
+
+export interface CatalogItem {
+  value: string;
+  label: string;
+}
+
+export type Catalog = Record<CatalogKind, CatalogItem[]>;
+
+export interface SettingsDto {
+  registrationMode: RegistrationMode;
 }
 
 export interface Paginated<T> {
@@ -156,6 +210,7 @@ export interface AppConfig {
   appName: string;
   github: boolean;
   requireEmailVerification: boolean;
+  registrationMode: RegistrationMode;
   maxUploadMb: number;
 }
 

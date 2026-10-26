@@ -1,4 +1,11 @@
-import { NOTIFICATION_TYPES, POST_TYPES, ROLES } from '@devconnector/shared';
+import {
+  AUDIT_ACTIONS,
+  INVITABLE_ROLES,
+  NOTIFICATION_TYPES,
+  POST_TYPES,
+  REGISTRATION_MODES,
+  ROLES,
+} from '@devconnector/shared';
 import { sql } from 'drizzle-orm';
 import {
   bigserial,
@@ -19,13 +26,16 @@ import {
 
 /**
  * Database schema (PostgreSQL 18). See TARGET.md §4 for the mapping from the legacy Prisma
- * model: `users.id` takes the legacy `Profile.id`, tags/skills are text[] columns, likes have
- * a composite primary key, every foreign key is indexed.
+ * model: `users.id` takes the legacy `Profile.id`, tags/skills are text[] columns validated
+ * against the catalog tables, likes have a composite primary key, every foreign key is indexed.
+ * Roles and ownership rules: ADR-013.
  */
 
+const tz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
+
 const timestamps = {
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+  createdAt: tz('created_at').notNull().defaultNow(),
+  updatedAt: tz('updated_at')
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
@@ -40,6 +50,9 @@ export const authTokenKind = pgEnum('auth_token_kind', [
   'magic_link',
 ]);
 export const oauthProvider = pgEnum('oauth_provider', ['github']);
+export const invitationRole = pgEnum('invitation_role', INVITABLE_ROLES);
+export const registrationMode = pgEnum('registration_mode', REGISTRATION_MODES);
+export const auditAction = pgEnum('audit_action', AUDIT_ACTIONS);
 
 export const users = pgTable(
   'users',
@@ -47,16 +60,22 @@ export const users = pgTable(
     id: serial('id').primaryKey(),
     /** Always stored lower-cased (normalised by the shared e-mail schema). */
     email: text('email').notNull(),
-    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true, mode: 'date' }),
+    emailVerifiedAt: tz('email_verified_at'),
     /** argon2id, or a legacy bcrypt hash imported from Supabase until the next login. Null = OAuth-only. */
     passwordHash: text('password_hash'),
     role: userRole('role').notNull().default('user'),
-    disabledAt: timestamp('disabled_at', { withTimezone: true, mode: 'date' }),
+    disabledAt: tz('disabled_at'),
     /** Supabase `auth.users.id` for imported accounts (traceability only). */
     legacyAuthId: uuid('legacy_auth_id'),
     ...timestamps,
   },
-  (t) => [uniqueIndex('users_email_key').on(t.email)],
+  (t) => [
+    uniqueIndex('users_email_key').on(t.email),
+    // ADR-013: exactly one owner.
+    uniqueIndex('users_single_owner')
+      .on(t.role)
+      .where(sql`${t.role} = 'owner'`),
+  ],
 );
 
 export const profiles = pgTable(
@@ -92,11 +111,11 @@ export const sessions = pgTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
+    createdAt: tz('created_at').notNull().defaultNow(),
+    expiresAt: tz('expires_at').notNull(),
+    lastSeenAt: tz('last_seen_at').notNull().defaultNow(),
+    /** Sudo mode (ADR-013): sensitive admin actions allowed until this instant. */
+    sudoUntil: tz('sudo_until'),
     ip: text('ip'),
     userAgent: text('user_agent'),
   },
@@ -111,7 +130,7 @@ export const oauthAccounts = pgTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    createdAt: tz('created_at').notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.provider, t.providerUserId] }),
@@ -129,15 +148,79 @@ export const authTokens = pgTable(
     kind: authTokenKind('kind').notNull(),
     /** SHA-256 (hex) of the token in the e-mail link. */
     tokenHash: text('token_hash').notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    usedAt: timestamp('used_at', { withTimezone: true, mode: 'date' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    expiresAt: tz('expires_at').notNull(),
+    usedAt: tz('used_at'),
+    createdAt: tz('created_at').notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('auth_tokens_hash_key').on(t.tokenHash),
     index('auth_tokens_user_kind_idx').on(t.userId, t.kind),
   ],
 );
+
+export const invitations = pgTable(
+  'invitations',
+  {
+    id: serial('id').primaryKey(),
+    email: text('email').notNull(),
+    role: invitationRole('role').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    invitedBy: integer('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    expiresAt: tz('expires_at').notNull(),
+    acceptedAt: tz('accepted_at'),
+    acceptedBy: integer('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    revokedAt: tz('revoked_at'),
+    createdAt: tz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('invitations_token_key').on(t.tokenHash),
+    index('invitations_email_idx').on(t.email),
+    index('invitations_pending_idx')
+      .on(t.expiresAt)
+      .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
+  ],
+);
+
+export const settings = pgTable('settings', {
+  key: text('key').primaryKey(),
+  value: jsonb('value').$type<string | number | boolean | Record<string, unknown>>().notNull(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+  updatedBy: integer('updated_by').references(() => users.id, { onDelete: 'set null' }),
+});
+
+export type AuditData = Record<string, string | number | boolean | null>;
+
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    action: auditAction('action').notNull(),
+    actorId: integer('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    targetUserId: integer('target_user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** Kept so entries stay meaningful after the target account is deleted. */
+    targetEmail: text('target_email'),
+    data: jsonb('data').$type<AuditData>().notNull().default({}),
+    ip: text('ip'),
+    createdAt: tz('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('audit_log_created_idx').on(t.createdAt.desc()),
+    index('audit_log_target_idx').on(t.targetUserId),
+    index('audit_log_action_idx').on(t.action),
+  ],
+);
+
+export const catalogSkills = pgTable('catalog_skills', {
+  value: text('value').primaryKey(),
+  label: text('label').notNull(),
+  createdAt: tz('created_at').notNull().defaultNow(),
+});
+
+export const catalogTags = pgTable('catalog_tags', {
+  value: text('value').primaryKey(),
+  label: text('label').notNull(),
+  createdAt: tz('created_at').notNull().defaultNow(),
+});
 
 export const posts = pgTable(
   'posts',
@@ -150,7 +233,7 @@ export const posts = pgTable(
     title: text('title').notNull(),
     content: text('content').notNull(),
     published: boolean('published').notNull().default(false),
-    publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' }),
+    publishedAt: tz('published_at'),
     viewCount: integer('view_count').notNull().default(0),
     tags: text('tags')
       .array()
@@ -177,7 +260,7 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     body: text('body').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    createdAt: tz('created_at').notNull().defaultNow(),
   },
   (t) => [
     index('comments_post_idx').on(t.postId, t.createdAt.desc()),
@@ -194,7 +277,7 @@ export const likes = pgTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    createdAt: tz('created_at').notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.postId, t.userId] }), index('likes_user_idx').on(t.userId)],
 );
@@ -253,8 +336,8 @@ export const notifications = pgTable(
     postId: integer('post_id').references(() => posts.id, { onDelete: 'cascade' }),
     commentId: integer('comment_id').references(() => comments.id, { onDelete: 'cascade' }),
     data: jsonb('data').$type<NotificationData>().notNull().default({}),
-    readAt: timestamp('read_at', { withTimezone: true, mode: 'date' }),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    readAt: tz('read_at'),
+    createdAt: tz('created_at').notNull().defaultNow(),
   },
   (t) => [
     index('notifications_user_idx').on(t.userId, t.createdAt.desc()),
@@ -285,11 +368,9 @@ export const emailOutbox = pgTable(
     subject: text('subject').notNull(),
     html: text('html').notNull(),
     text: text('text').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .defaultNow(),
-    sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }),
+    createdAt: tz('created_at').notNull().defaultNow(),
+    nextAttemptAt: tz('next_attempt_at').notNull().defaultNow(),
+    sentAt: tz('sent_at'),
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
   },
@@ -310,9 +391,15 @@ export const ALL_TABLES = [
   'posts',
   'educations',
   'experiences',
+  'audit_log',
+  'invitations',
+  'settings',
   'auth_tokens',
   'oauth_accounts',
   'sessions',
   'profiles',
   'users',
 ] as const;
+
+/** Catalog tables are reference data: tests re-seed them instead of truncating them. */
+export const CATALOG_TABLES = ['catalog_skills', 'catalog_tags'] as const;

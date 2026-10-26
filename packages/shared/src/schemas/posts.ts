@@ -1,13 +1,14 @@
 import { z } from 'zod';
-import { LIMITS, POST_TYPES, TAG_VALUES } from '../constants.ts';
-import { cursorQuerySchema, pageQuerySchema } from './common.ts';
+import { LIMITS, POST_TYPES } from '../constants.ts';
+import { catalogValueSchema, cursorQuerySchema, pageQuerySchema } from './common.ts';
 
 export const postCreateSchema = z.strictObject({
   title: z.string().trim().min(1, { error: 'Title is required' }).max(LIMITS.postTitle),
   content: z.string().trim().min(1, { error: 'Content is required' }).max(LIMITS.postContent),
   type: z.enum(POST_TYPES),
   published: z.boolean(),
-  tags: z.array(z.enum(TAG_VALUES)).max(LIMITS.tagsMax, {
+  /** Values must exist in the tags catalog (checked by the API). */
+  tags: z.array(catalogValueSchema).max(LIMITS.tagsMax, {
     error: `Pick at most ${LIMITS.tagsMax} tags`,
   }),
 });
@@ -20,7 +21,7 @@ export type PostUpdateInput = z.infer<typeof postUpdateSchema>;
 /** GET /posts?page&limit&type&tag (published feed) and GET /me/posts. */
 export const postsQuerySchema = pageQuerySchema.extend({
   type: z.enum(POST_TYPES).optional(),
-  tag: z.enum(TAG_VALUES).optional(),
+  tag: catalogValueSchema.optional(),
 });
 export type PostsQuery = z.infer<typeof postsQuerySchema>;
 

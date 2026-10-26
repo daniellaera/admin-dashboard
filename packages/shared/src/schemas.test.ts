@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { displayNameOf, labelOf, POST_TAGS, SKILL_VALUES, TAG_VALUES } from './constants.ts';
-import { adminUserUpdateSchema } from './schemas/admin.ts';
+import { DEFAULT_SKILLS, DEFAULT_TAGS, displayNameOf, labelOf } from './constants.ts';
+import {
+  adminUserUpdateSchema,
+  catalogItemSchema,
+  invitationCreateSchema,
+} from './schemas/admin.ts';
 import { loginSchema, registerSchema } from './schemas/auth.ts';
-import { pageQuerySchema } from './schemas/common.ts';
+import { catalogValueSchema, pageQuerySchema } from './schemas/common.ts';
 import { experienceInputSchema } from './schemas/cv.ts';
 import { postCreateSchema, postUpdateSchema, postsQuerySchema } from './schemas/posts.ts';
 import { profileUpdateSchema } from './schemas/profile.ts';
 
 describe('constants', () => {
-  it('exposes the 15 programming languages and 14 tags of the original app', () => {
-    expect(SKILL_VALUES).toHaveLength(15);
-    expect(TAG_VALUES).toHaveLength(14);
-    expect(labelOf(POST_TAGS, 'joblife')).toBe('Job Life');
-    expect(labelOf(POST_TAGS, 'unknown')).toBe('unknown');
+  it('exposes the 15 programming languages and 14 tags of the original app as catalog defaults', () => {
+    expect(DEFAULT_SKILLS).toHaveLength(15);
+    expect(DEFAULT_TAGS).toHaveLength(14);
+    expect(labelOf(DEFAULT_TAGS, 'joblife')).toBe('Job Life');
+    expect(labelOf(DEFAULT_TAGS, 'unknown')).toBe('unknown');
+    for (const item of [...DEFAULT_SKILLS, ...DEFAULT_TAGS]) {
+      expect(catalogValueSchema.safeParse(item.value).success, item.value).toBe(true);
+    }
   });
 
   it('never derives a display name from an e-mail address', () => {
@@ -41,12 +48,15 @@ describe('auth schemas', () => {
 });
 
 describe('profile schema', () => {
-  it('accepts a partial update and validates the website URL', () => {
+  it('accepts a partial update and validates the website URL and skill values', () => {
     expect(profileUpdateSchema.parse({ bio: ' hi ' })).toEqual({ bio: 'hi' });
     expect(profileUpdateSchema.safeParse({ website: 'https://example.com' }).success).toBe(true);
     expect(profileUpdateSchema.safeParse({ website: '' }).success).toBe(true);
     expect(profileUpdateSchema.safeParse({ website: 'javascript:alert(1)' }).success).toBe(false);
-    expect(profileUpdateSchema.safeParse({ skills: ['python', 'cobol'] }).success).toBe(false);
+    expect(profileUpdateSchema.parse({ skills: ['Python', 'c++'] })).toEqual({
+      skills: ['python', 'c++'],
+    });
+    expect(profileUpdateSchema.safeParse({ skills: ['has space'] }).success).toBe(false);
     expect(profileUpdateSchema.safeParse({ email: 'x@y.z' }).success).toBe(false);
   });
 });
@@ -55,7 +65,7 @@ describe('post schemas', () => {
   it('validates create and partial update', () => {
     const post = { title: 'T', content: 'C', type: 'TECH', published: true, tags: ['devops'] };
     expect(postCreateSchema.safeParse(post).success).toBe(true);
-    expect(postCreateSchema.safeParse({ ...post, tags: ['nope'] }).success).toBe(false);
+    expect(postCreateSchema.safeParse({ ...post, tags: ['Not Valid!'] }).success).toBe(false);
     expect(postCreateSchema.safeParse({ ...post, type: 'MEME' }).success).toBe(false);
     expect(postUpdateSchema.parse({ published: false })).toEqual({ published: false });
     expect(postUpdateSchema.safeParse({ authorId: 1 }).success).toBe(false);
@@ -98,9 +108,18 @@ describe('cv schemas', () => {
 });
 
 describe('admin schemas', () => {
-  it('requires at least one field', () => {
+  it('only lets the owner assign admin/user, never owner', () => {
     expect(adminUserUpdateSchema.safeParse({}).success).toBe(false);
     expect(adminUserUpdateSchema.safeParse({ role: 'admin' }).success).toBe(true);
+    expect(adminUserUpdateSchema.safeParse({ role: 'owner' }).success).toBe(false);
     expect(adminUserUpdateSchema.safeParse({ role: 'root' }).success).toBe(false);
+    expect(invitationCreateSchema.safeParse({ email: 'a@b.co', role: 'owner' }).success).toBe(
+      false,
+    );
+    expect(invitationCreateSchema.safeParse({ email: 'a@b.co', role: 'admin' }).success).toBe(true);
+    expect(catalogItemSchema.parse({ value: ' Rust ', label: ' Rust ' })).toEqual({
+      value: 'rust',
+      label: 'Rust',
+    });
   });
 });

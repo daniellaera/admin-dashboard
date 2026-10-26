@@ -1,6 +1,6 @@
 import type { Role } from '@devconnector/shared';
 import type { Context, MiddlewareHandler } from 'hono';
-import { ForbiddenError, UnauthorizedError } from '../../lib/errors.ts';
+import { AppError, ForbiddenError, UnauthorizedError } from '../../lib/errors.ts';
 import type { AppEnv } from '../../types.ts';
 import { type CurrentUser, readSessionCookie, type SessionService } from './session.ts';
 
@@ -24,14 +24,33 @@ export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
   await next();
 };
 
-export function requireRole(role: Role): MiddlewareHandler<AppEnv> {
+/** Allows any of the given roles (ADR-013: `owner` and `admin` share the admin area). */
+export function requireRole(...roles: Role[]): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const user = c.get('user');
     if (!user) throw new UnauthorizedError();
-    if (user.role !== role) throw new ForbiddenError('This action requires the admin role');
+    if (!roles.includes(user.role))
+      throw new ForbiddenError('This action requires a different role');
     await next();
   };
 }
+
+export class SudoRequiredError extends AppError {
+  constructor() {
+    super(403, 'Confirmation required', {
+      detail: 'Re-enter your password to perform this action',
+      type: 'sudo-required',
+    });
+  }
+}
+
+/** Sensitive actions need a recent password confirmation on this session (ADR-013). */
+export const requireSudo: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const user = c.get('user');
+  if (!user) throw new UnauthorizedError();
+  if (!user.sudoUntil || user.sudoUntil.getTime() <= Date.now()) throw new SudoRequiredError();
+  await next();
+};
 
 /** The authenticated user, for handlers mounted behind `requireAuth`. */
 export function currentUser(c: Context<AppEnv>): CurrentUser {
@@ -40,6 +59,10 @@ export function currentUser(c: Context<AppEnv>): CurrentUser {
   return user;
 }
 
-export function isAdmin(user: CurrentUser | undefined): boolean {
-  return user?.role === 'admin';
+export function hasSudo(user: CurrentUser): boolean {
+  return user.sudoUntil !== null && user.sudoUntil.getTime() > Date.now();
+}
+
+export function isModerator(user: CurrentUser | undefined): boolean {
+  return user?.role === 'admin' || user?.role === 'owner';
 }

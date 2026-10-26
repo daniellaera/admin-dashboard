@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { LIMITS, SKILL_VALUES } from '../constants.ts';
-import { pageQuerySchema } from './common.ts';
+import { LIMITS } from '../constants.ts';
+import { catalogValueSchema, pageQuerySchema } from './common.ts';
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 
@@ -22,7 +22,8 @@ export const profileUpdateSchema = z.strictObject({
   company: optionalText(LIMITS.company),
   bio: optionalText(LIMITS.bio),
   isPublic: z.boolean().optional(),
-  skills: z.array(z.enum(SKILL_VALUES)).max(LIMITS.skillsMax).optional(),
+  /** Values must exist in the skills catalog (checked by the API). */
+  skills: z.array(catalogValueSchema).max(LIMITS.skillsMax).optional(),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 

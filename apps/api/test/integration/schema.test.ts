@@ -82,7 +82,7 @@ describe('database schema', () => {
     const first = await seed(db);
     const second = await seed(db);
     expect(second).toEqual(first);
-    expect(first.users).toBe(5); // 4 personas + admin
+    expect(first.users).toBe(6); // 4 personas + owner + admin
     expect(first.posts).toBe(6);
     const [admin] = await db.select().from(users).where(eq(users.email, SEED_ADMIN.email));
     expect(admin?.role).toBe('admin');

@@ -1,11 +1,13 @@
 import { eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import { hashPassword } from '../lib/password.ts';
+import { createCatalogService } from '../modules/catalog/service.ts';
 import type { Db } from './client.ts';
 import { comments, educations, experiences, likes, posts, profiles, users } from './schema.ts';
 
-/** Development password shared by every seeded persona (never used outside dev/test). */
+/** Development credentials (never used outside dev/test). */
 export const SEED_PASSWORD = 'Password123!';
+export const SEED_OWNER = { email: 'owner@devconnector.local', password: 'Owner1234!' } as const;
 export const SEED_ADMIN = { email: 'admin@devconnector.local', password: 'Admin1234!' } as const;
 
 interface Persona {
@@ -88,7 +90,7 @@ const PERSONAS: Persona[] = [
     username: 'Randy Smith',
     website: 'https://randysmith.io',
     company: 'Randy&Co',
-    skills: ['devops' as never, 'rust'].filter((s) => s !== 'devops'),
+    skills: ['rust', 'c++'],
     posts: [
       {
         title: 'Ask a question about the project on GitHub',
@@ -101,20 +103,45 @@ const PERSONAS: Persona[] = [
 ];
 
 export interface SeedOptions {
-  /** Create the admin account (default true). */
-  admin?: boolean;
   logger?: Logger;
+}
+
+async function upsertStaff(
+  db: Db,
+  account: { email: string; password: string },
+  role: 'owner' | 'admin',
+  username: string,
+): Promise<number | undefined> {
+  const [row] = await db
+    .insert(users)
+    .values({
+      email: account.email,
+      passwordHash: await hashPassword(account.password),
+      emailVerifiedAt: new Date(),
+      role,
+    })
+    .onConflictDoUpdate({ target: users.email, set: { role } })
+    .returning({ id: users.id });
+  if (row) {
+    await db
+      .insert(profiles)
+      .values({ userId: row.id, username, isPublic: false })
+      .onConflictDoNothing();
+  }
+  return row?.id;
 }
 
 /**
  * Idempotent development seed: upserts users by e-mail and posts by (author, title), so running
- * it twice yields the same database. Returns the ids it touched.
+ * it twice yields the same database. Also installs the default skills/tags catalog.
  */
 export async function seed(
   db: Db,
   options: SeedOptions = {},
 ): Promise<{ users: number; posts: number }> {
   const log = options.logger;
+  await createCatalogService(db).ensureDefaults();
+
   const passwordHash = await hashPassword(SEED_PASSWORD);
   const userIds = new Map<string, number>();
 
@@ -172,25 +199,14 @@ export async function seed(
     }
   }
 
-  if (options.admin !== false) {
-    const [admin] = await db
-      .insert(users)
-      .values({
-        email: SEED_ADMIN.email,
-        passwordHash: await hashPassword(SEED_ADMIN.password),
-        emailVerifiedAt: new Date(),
-        role: 'admin',
-      })
-      .onConflictDoUpdate({ target: users.email, set: { role: 'admin' } })
-      .returning({ id: users.id });
-    if (admin) {
-      await db
-        .insert(profiles)
-        .values({ userId: admin.id, username: 'Admin', isPublic: false })
-        .onConflictDoNothing();
-      userIds.set(SEED_ADMIN.email, admin.id);
-    }
-  }
+  // Staff accounts (ADR-013): the single owner (only when none exists) and one admin.
+  const [existingOwner] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.role, 'owner'))
+    .limit(1);
+  if (!existingOwner) await upsertStaff(db, SEED_OWNER, 'owner', 'Owner');
+  await upsertStaff(db, SEED_ADMIN, 'admin', 'Admin');
 
   // A few interactions so the feed, counters and notifications have something to show.
   const hulk = userIds.get('hulk@marvel.com');

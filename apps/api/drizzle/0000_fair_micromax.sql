@@ -1,8 +1,22 @@
+CREATE TYPE "public"."audit_action" AS ENUM('role.change', 'user.disable', 'user.enable', 'user.delete', 'invitation.create', 'invitation.revoke', 'invitation.accept', 'settings.update', 'catalog.create', 'catalog.update', 'catalog.delete', 'sudo.enter');--> statement-breakpoint
 CREATE TYPE "public"."auth_token_kind" AS ENUM('verify_email', 'reset_password', 'magic_link');--> statement-breakpoint
+CREATE TYPE "public"."invitation_role" AS ENUM('user', 'admin');--> statement-breakpoint
 CREATE TYPE "public"."notification_type" AS ENUM('comment', 'like', 'new_post', 'system');--> statement-breakpoint
 CREATE TYPE "public"."oauth_provider" AS ENUM('github');--> statement-breakpoint
 CREATE TYPE "public"."post_type" AS ENUM('FUNNY', 'TECH', 'RANDOM', 'NEWS', 'SERIOUS');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('admin', 'user');--> statement-breakpoint
+CREATE TYPE "public"."registration_mode" AS ENUM('open', 'invite_only');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('owner', 'admin', 'user');--> statement-breakpoint
+CREATE TABLE "audit_log" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"action" "audit_action" NOT NULL,
+	"actor_id" integer,
+	"target_user_id" integer,
+	"target_email" text,
+	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"ip" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "auth_tokens" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
@@ -10,6 +24,18 @@ CREATE TABLE "auth_tokens" (
 	"token_hash" text NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"used_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_skills" (
+	"value" text PRIMARY KEY NOT NULL,
+	"label" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_tags" (
+	"value" text PRIMARY KEY NOT NULL,
+	"label" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -60,6 +86,19 @@ CREATE TABLE "experiences" (
 	"is_current" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "invitations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"role" "invitation_role" NOT NULL,
+	"token_hash" text NOT NULL,
+	"invited_by" integer,
+	"expires_at" timestamp with time zone NOT NULL,
+	"accepted_at" timestamp with time zone,
+	"accepted_by" integer,
+	"revoked_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "likes" (
@@ -130,8 +169,16 @@ CREATE TABLE "sessions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"sudo_until" timestamp with time zone,
 	"ip" text,
 	"user_agent" text
+);
+--> statement-breakpoint
+CREATE TABLE "settings" (
+	"key" text PRIMARY KEY NOT NULL,
+	"value" jsonb NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_by" integer
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -146,11 +193,15 @@ CREATE TABLE "users" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth_tokens" ADD CONSTRAINT "auth_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "educations" ADD CONSTRAINT "educations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "experiences" ADD CONSTRAINT "experiences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_accepted_by_users_id_fk" FOREIGN KEY ("accepted_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "likes" ADD CONSTRAINT "likes_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "likes" ADD CONSTRAINT "likes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notification_preferences" ADD CONSTRAINT "notification_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -162,6 +213,10 @@ ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_users_id_fk"
 ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "settings" ADD CONSTRAINT "settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "audit_log_created_idx" ON "audit_log" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "audit_log_target_idx" ON "audit_log" USING btree ("target_user_id");--> statement-breakpoint
+CREATE INDEX "audit_log_action_idx" ON "audit_log" USING btree ("action");--> statement-breakpoint
 CREATE UNIQUE INDEX "auth_tokens_hash_key" ON "auth_tokens" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "auth_tokens_user_kind_idx" ON "auth_tokens" USING btree ("user_id","kind");--> statement-breakpoint
 CREATE INDEX "comments_post_idx" ON "comments" USING btree ("post_id","created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -169,6 +224,9 @@ CREATE INDEX "comments_author_idx" ON "comments" USING btree ("author_id");--> s
 CREATE INDEX "educations_user_idx" ON "educations" USING btree ("user_id","started_on" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "email_outbox_pending_idx" ON "email_outbox" USING btree ("next_attempt_at") WHERE "email_outbox"."sent_at" IS NULL;--> statement-breakpoint
 CREATE INDEX "experiences_user_idx" ON "experiences" USING btree ("user_id","started_on" DESC NULLS LAST);--> statement-breakpoint
+CREATE UNIQUE INDEX "invitations_token_key" ON "invitations" USING btree ("token_hash");--> statement-breakpoint
+CREATE INDEX "invitations_email_idx" ON "invitations" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "invitations_pending_idx" ON "invitations" USING btree ("expires_at") WHERE "invitations"."accepted_at" IS NULL AND "invitations"."revoked_at" IS NULL;--> statement-breakpoint
 CREATE INDEX "likes_user_idx" ON "likes" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "notifications_user_idx" ON "notifications" USING btree ("user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "notifications_unread_idx" ON "notifications" USING btree ("user_id") WHERE "notifications"."read_at" IS NULL;--> statement-breakpoint
@@ -181,4 +239,5 @@ CREATE INDEX "profiles_skills_gin" ON "profiles" USING gin ("skills");--> statem
 CREATE INDEX "profiles_public_idx" ON "profiles" USING btree ("is_public","created_at");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "sessions_expires_idx" ON "sessions" USING btree ("expires_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_email_key" ON "users" USING btree ("email");
+CREATE UNIQUE INDEX "users_email_key" ON "users" USING btree ("email");--> statement-breakpoint
+CREATE UNIQUE INDEX "users_single_owner" ON "users" USING btree ("role") WHERE "users"."role" = 'owner';

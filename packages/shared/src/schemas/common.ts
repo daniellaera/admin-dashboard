@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LIMITS } from '../constants.ts';
+import { CATALOG_VALUE_PATTERN, LIMITS } from '../constants.ts';
 
 /** Positive integer id from a path parameter (`/posts/:id`). */
 export const idParamSchema = z.object({
@@ -42,3 +42,10 @@ export const tokenSchema = z
   .min(20)
   .max(256)
   .regex(/^[A-Za-z0-9_-]+$/, { error: 'Invalid token' });
+
+/** A skill or tag identifier; existence in the catalog is checked by the API. */
+export const catalogValueSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(CATALOG_VALUE_PATTERN, { error: 'Use lower-case letters, digits and + # . _ -' });

@@ -112,6 +112,40 @@ export function passwordChangedMail(brand: MailBrand, signinUrl: string): MailCo
   };
 }
 
+export function invitationMail(
+  brand: MailBrand,
+  params: { link: string; role: 'user' | 'admin'; invitedBy: string; hours: number },
+): MailContent {
+  const what = params.role === 'admin' ? 'join as an administrator' : 'join';
+  const title = `${params.invitedBy} invited you to ${what} ${brand.appName}`;
+  return {
+    subject: title,
+    html: layout(
+      brand,
+      title,
+      `<p>${escapeHtml(params.invitedBy)} invited you to ${what} <strong>${escapeHtml(brand.appName)}</strong>.</p>${button(params.link, 'Accept the invitation')}<p>This invitation is valid for ${params.hours} hours and can be used once.</p>`,
+    ),
+    text: `${params.invitedBy} invited you to ${what} ${brand.appName}.\n\nAccept the invitation (valid ${params.hours} hours, single use):\n${params.link}`,
+  };
+}
+
+export function roleChangedMail(
+  brand: MailBrand,
+  params: { role: string; appUrl: string },
+): MailContent {
+  const label = params.role === 'admin' ? 'administrator' : 'member';
+  const title = `Your ${brand.appName} role is now: ${label}`;
+  return {
+    subject: title,
+    html: layout(
+      brand,
+      title,
+      `<p>The owner of ${escapeHtml(brand.appName)} changed your role to <strong>${escapeHtml(label)}</strong>. For security, every session of your account was signed out.</p>${button(params.appUrl, 'Open ' + brand.appName)}`,
+    ),
+    text: `Your role on ${brand.appName} is now "${label}". Every session was signed out for security.\n\n${params.appUrl}`,
+  };
+}
+
 export function notificationMail(
   brand: MailBrand,
   params: {

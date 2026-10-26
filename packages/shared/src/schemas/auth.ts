@@ -4,6 +4,8 @@ import { emailSchema, passwordSchema, tokenSchema } from './common.ts';
 export const registerSchema = z.strictObject({
   email: emailSchema,
   password: passwordSchema,
+  /** Required when the registration mode is `invite_only`. */
+  inviteToken: tokenSchema.optional(),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
@@ -40,3 +42,16 @@ export const deleteAccountSchema = z.strictObject({
   email: emailSchema.optional(),
 });
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+
+/** POST /auth/sudo — re-enter the password to unlock sensitive admin actions for 10 minutes. */
+export const sudoSchema = z.strictObject({
+  password: z.string().min(1, { error: 'Enter your password' }).max(128),
+});
+export type SudoInput = z.infer<typeof sudoSchema>;
+
+/** POST /auth/invitations/accept — password is required when the account does not exist yet. */
+export const acceptInvitationSchema = z.strictObject({
+  token: tokenSchema,
+  password: passwordSchema.optional(),
+});
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
