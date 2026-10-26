@@ -8,7 +8,9 @@ import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { routeTree } from './routeTree.gen.ts';
@@ -43,6 +45,9 @@ createRoot(container).render(
         <Notifications position="bottom-right" />
         <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />
+          {/* Both devtools compile to nothing in production builds. */}
+          <ReactQueryDevtools buttonPosition="bottom-left" />
+          <TanStackRouterDevtools router={router} position="bottom-left" />
         </QueryClientProvider>
       </ModalsProvider>
     </MantineProvider>

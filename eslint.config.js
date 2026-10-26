@@ -61,6 +61,25 @@ export default defineConfig(
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
       ...jsxA11y.flatConfigs.recommended.rules,
+      // react-hook-form's handleSubmit and router navigate return promises JSX handlers ignore by design.
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+      // TanStack Router signals redirects (a Response) and 404s by throwing non-Error values.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            { from: 'lib', name: 'Response' },
+            {
+              from: 'package',
+              package: '@tanstack/router-core',
+              name: ['Redirect', 'NotFoundError'],
+            },
+          ],
+        },
+      ],
     },
   },
   // Tests may use console, loose typing for fixtures and no-op stubs.

@@ -140,3 +140,17 @@ Implementation notes: the skills/tags catalog becomes database-backed (seeded wi
 | Q3 | Users administration (today a mock): implement for real, admin-only, or drop | **implement**: list/search/paginate, change role, disable/enable, delete; dashboard with real counts |
 | Q4 | Profile visibility: `is_public` default for new and migrated profiles | **public by default** (matches today's visible directory; users can opt out via the toggle; the API enforces it) |
 | Q5 | E-mail scope: which mails are sent over the user's SMTP | **transactional always** (verification, reset, magic link, "account exists"); **notification e-mails opt-in per user** (default off); no digests |
+
+## D-018 — Batch 7 (web) judgement calls
+*2026-10-26*
+
+- **Lint idioms for the SPA** (`eslint.config.js`, web block): `@typescript-eslint/no-misused-promises` with `checksVoidReturn.attributes: false` (react-hook-form's `handleSubmit` and the router's `navigate` return promises JSX handlers ignore by design); `@typescript-eslint/only-throw-error` allows TanStack Router's `Redirect` (a `Response`) and `NotFoundError`, which are thrown by contract. Everything else stays `strictTypeChecked`.
+- **Route files** export `Route` plus a named `RouteComponent` (hooks such as `Route.useSearch()` are not allowed in an inline arrow — `react-hooks/rules-of-hooks`). Typed Mantine links are `createLink` wrappers (`components/links.tsx`) because Mantine's polymorphic `component={Link}` loses the registered router types.
+- **Forms mirroring server state are keyed on the saved value** (`<SettingsForm key=…>`, `<PreferencesForm key=…>`) instead of syncing props into state in an effect — satisfies the React Compiler rule `react-hooks/set-state-in-effect` and avoids a flash of stale values.
+- **TanStack Query 5.105** deprecates `ensureQueryData` → root `beforeLoad` uses `queryClient.query({ ...options, staleTime: 'static' })`.
+- **Router and Query devtools** are mounted in `main.tsx`; both compile to nothing in production builds. `msw`, `@testing-library/user-event` and `supertest` were removed (never used: component tests stub `fetch`, API tests call `app.request`).
+- **`/admin/users/new` is not ported.** Under ADR-013 accounts come only from sign-up or invitations, so the admin user page is a detail view with the matrix actions (role select for the owner, disable/enable, delete). The invite modal lives on the users page and on `/admin/invitations`.
+- **Dashboard by role**: `/admin/stats` is staff-only, so members get a personal overview (own posts, unread notifications, profile completeness, shortcuts) instead of a 403.
+- **E-mails in the UI (PRIV-01)** appear only on pages backed by admin DTOs (users table/detail, dashboard "Recently added", invitations, audit log), all behind `requireStaff`; every public component renders `displayName`.
+- **Staff user search** (SH-06) is a Mantine Spotlight (⌘K) over `GET /admin/users?q=`, shown only to owner/admin; members never see the control.
+- **Web unit tests** cover the ADR-013 matrix as rendered (`UsersPage.test.tsx`), the route guards (`guards.test.ts`) and the feed card (`PostCard.test.tsx`); full user journeys are left to the Playwright suite of batch 8.
