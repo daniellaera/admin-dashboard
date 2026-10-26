@@ -192,7 +192,7 @@ describe('notifications (ADR-006)', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/event-stream');
     expect(res.headers.get('x-accel-buffering')).toBe('no');
-    const reader$ = res.body!.getReader();
+    const reader$ = (res.body as ReadableStream<Uint8Array>).getReader();
     const decoder = new TextDecoder();
     let received = '';
     const readUntil = async (needle: string) => {

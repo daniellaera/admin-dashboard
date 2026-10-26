@@ -35,9 +35,10 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
           queue.push(event);
           wake?.();
         });
-        let open = true;
+        // Object, not a bare boolean: it is mutated from the abort callback.
+        const state = { open: true };
         stream.onAbort(() => {
-          open = false;
+          state.open = false;
           unsubscribe();
           wake?.();
         });
@@ -46,7 +47,7 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
           event: 'ready',
           data: JSON.stringify({ channels: [...channels] }),
         });
-        while (open) {
+        while (state.open) {
           const next = queue.shift();
           if (next) {
             counter += 1;
@@ -68,7 +69,7 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
               resolve(true);
             };
           });
-          if (!woke && open)
+          if (!woke && state.open)
             await stream.writeSSE({ event: 'ping', data: JSON.stringify({ type: 'ping' }) });
         }
       });
