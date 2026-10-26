@@ -1,4 +1,5 @@
 import type { Logger } from 'pino';
+import type { Db } from './db/client.ts';
 import type { Env } from './env.ts';
 
 /** Request-scoped variables available on every Hono context. */
@@ -15,6 +16,7 @@ export interface AppEnv {
 export interface AppDeps {
   env: Env;
   logger: Logger;
+  db: Db;
   /** Readiness probes run by GET /ready; each resolves to true when healthy. */
   readiness: Record<string, () => Promise<boolean>>;
   /** Package version reported by GET /health. */

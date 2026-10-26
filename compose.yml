@@ -1,0 +1,34 @@
+# Development / demo stack.
+#   docker compose up -d db mailpit   → then `pnpm dev` for hot reload (API :3000, web :5173)
+#   docker compose up --build         → full stack with the production image on :8080 (batch 9)
+name: devconnector
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: devconnector
+      POSTGRES_PASSWORD: devconnector
+      POSTGRES_DB: devconnector
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U devconnector -d devconnector']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Catches every e-mail the app sends in development: SMTP on 1025, web UI on http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  pgdata:

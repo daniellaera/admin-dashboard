@@ -8,6 +8,8 @@ function build(readiness: Record<string, () => Promise<boolean>> = {}) {
   return createApp({
     env: testEnv(),
     logger: pino({ level: 'silent' }),
+    // The skeleton routes under test never touch the database.
+    db: {} as never,
     version: '2.0.0-test',
     readiness,
   });
