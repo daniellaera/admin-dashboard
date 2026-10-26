@@ -22,9 +22,10 @@ test.describe('public site', () => {
     await expect(page.getByRole('button', { name: 'Like this post' }).first()).toBeDisabled();
     await page.getByRole('button', { name: '2', exact: true }).click();
     await expect(page).toHaveURL(/page=2/);
-    // Other specs may leave a post or two behind; the second page is the remainder.
+    // Other specs may leave a post or two behind; the second page is the remainder. The list
+    // keeps the previous page as placeholder while loading, hence the polling assertion.
+    await expect.poll(() => articles.count()).toBeLessThan(5);
     await expect(articles.first()).toBeVisible();
-    expect(await articles.count()).toBeLessThan(5);
 
     await articles.first().getByRole('link').first().click();
     await expect(page).toHaveURL(/\/posts\/\d+$/);

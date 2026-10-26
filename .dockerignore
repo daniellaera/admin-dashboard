@@ -1,0 +1,24 @@
+# Only what the build needs goes into the context.
+.git
+.github
+.idea
+.vscode
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+**/.vite
+**/*.tsbuildinfo
+data
+apps/api/data
+e2e
+playwright-report
+test-results
+docs
+backend
+frontend
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

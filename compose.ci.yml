@@ -1,0 +1,11 @@
+# CI overlay for the end-to-end job: run the image that was just built instead of building
+# again, and lift the per-IP rate limits (the suite logs in dozens of times a minute).
+#   docker compose -f compose.yml -f compose.ci.yml up -d --wait
+services:
+  app:
+    build: !reset null
+    image: ${APP_IMAGE:-devconnector:ci}
+    environment:
+      LOG_LEVEL: warn
+      RATE_LIMIT_API_PER_MINUTE: '100000'
+      RATE_LIMIT_LOGIN_PER_MINUTE: '1000'

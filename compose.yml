@@ -1,6 +1,11 @@
-# Development / demo stack.
-#   docker compose up -d db mailpit   → then `pnpm dev` for hot reload (API :3000, web :5173)
-#   docker compose up --build         → full stack with the production image on :8080 (batch 9)
+# Development / demo stack (ADR-010).
+#   docker compose up --build        → full stack from this checkout: app on http://localhost:8080,
+#                                      Mailpit UI on http://localhost:8025 (every e-mail lands there)
+#   docker compose up -d db mailpit  → services only, then `pnpm dev` (API :3000, web :5173) for hot reload
+#   docker compose exec app node dist/scripts/seed.js → demo personas and posts (idempotent)
+#
+# First boot creates the single OWNER account from OWNER_EMAIL / OWNER_PASSWORD (ADR-013);
+# the defaults below are for local demos only. Production uses compose.prod.yml.
 name: devconnector
 
 services:
@@ -30,5 +35,33 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  app:
+    build: .
+    image: devconnector:local
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      # Public URL of this stack (links in e-mails, cookie flags). Override: COMPOSE_APP_URL=…
+      APP_URL: ${COMPOSE_APP_URL:-http://localhost:8080}
+      DATABASE_URL: postgres://devconnector:devconnector@db:5432/devconnector
+      # Signs OAuth state cookies — a throw-away value for local demos; prod uses `openssl rand -base64 48`.
+      AUTH_SECRET: ${AUTH_SECRET:-compose-dev-only-secret-not-for-production-0123456789}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      MAIL_FROM: DevConnector <no-reply@localhost>
+      OWNER_EMAIL: ${OWNER_EMAIL:-owner@devconnector.local}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-Owner1234!}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - uploads:/data/uploads
+
 volumes:
   pgdata:
+  uploads:
