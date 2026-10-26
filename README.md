@@ -14,8 +14,9 @@ open http://localhost:8080          # Mailpit (every e-mail the app sends): http
 ```
 
 Sign in as the owner `owner@devconnector.local` / `Owner1234!` (first-boot bootstrap, local demo
-values from `compose.yml`). Demo personas and posts: `docker compose exec app node dist/scripts/seed.js`
-— every persona signs in with `Password123!`.
+values from `compose.yml`). Demo personas and posts:
+`docker compose exec -e SEED_FORCE=1 app node dist/scripts/seed.js` (the image runs with
+`NODE_ENV=production`, hence the explicit opt-in) — every persona signs in with `Password123!`.
 
 ## Stack
 

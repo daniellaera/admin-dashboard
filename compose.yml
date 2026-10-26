@@ -2,7 +2,7 @@
 #   docker compose up --build        → full stack from this checkout: app on http://localhost:8080,
 #                                      Mailpit UI on http://localhost:8025 (every e-mail lands there)
 #   docker compose up -d db mailpit  → services only, then `pnpm dev` (API :3000, web :5173) for hot reload
-#   docker compose exec app node dist/scripts/seed.js → demo personas and posts (idempotent)
+#   docker compose exec -e SEED_FORCE=1 app node dist/scripts/seed.js → demo personas and posts (idempotent)
 #
 # First boot creates the single OWNER account from OWNER_EMAIL / OWNER_PASSWORD (ADR-013);
 # the defaults below are for local demos only. Production uses compose.prod.yml.
