@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+
+# builds and caches
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.eslintcache
+.turbo/
+.vite/
+
+# environment — real values never enter the repository (see .env.example)
+.env
+.env.*
+!.env.example
+
+# runtime data (uploads volume when running the API locally)
+/data/
+apps/api/data/
+
+# tests
+playwright-report/
+test-results/
+blob-report/
+e2e/.auth/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

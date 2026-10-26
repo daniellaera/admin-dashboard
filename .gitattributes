@@ -1,0 +1,17 @@
+# Normalise line endings: LF in the repository and in every checkout (AUDIT REC-01).
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Generated files: hide from diffs/stats
+pnpm-lock.yaml -diff
+apps/web/src/routeTree.gen.ts linguist-generated=true -diff
+apps/api/drizzle/meta/** linguist-generated=true

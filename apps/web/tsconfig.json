@@ -1,0 +1,10 @@
+{
+  "extends": "@devconnector/config/tsconfig/web.json",
+  "compilerOptions": {
+    "types": ["vite/client", "@testing-library/jest-dom"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "vitest.config.ts", "test"]
+}

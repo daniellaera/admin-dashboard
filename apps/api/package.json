@@ -1,0 +1,59 @@
+{
+  "name": "@devconnector/api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "DevConnector HTTP API (Hono on Node.js) — also serves the built web app in production",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/app.ts"
+    }
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.unit.config.ts && vitest run --config vitest.integration.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=../../.env src/scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=../../.env src/scripts/seed.ts",
+    "db:reset": "tsx --env-file-if-exists=../../.env src/scripts/reset.ts",
+    "db:studio": "drizzle-kit studio",
+    "admin:promote": "tsx --env-file-if-exists=../../.env src/scripts/promote-admin.ts",
+    "import:supabase": "tsx --env-file-if-exists=../../.env src/scripts/import-supabase.ts"
+  },
+  "dependencies": {
+    "@devconnector/shared": "workspace:*",
+    "@hono/node-server": "^2.1.5",
+    "@hono/zod-validator": "^0.9.1",
+    "@node-rs/argon2": "^2.2.2",
+    "arctic": "^3.7.0",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.14",
+    "nodemailer": "^10.2.1",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "sharp": "^0.35.5",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@devconnector/config": "workspace:*",
+    "@testcontainers/postgresql": "^12.2.1",
+    "@types/node": "catalog:",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "drizzle-kit": "^0.31.11",
+    "pino-pretty": "^13.2.0",
+    "supertest": "^7.3.1",
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

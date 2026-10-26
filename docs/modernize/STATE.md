@@ -6,8 +6,8 @@
 
 | Item | Value |
 |---|---|
-| Phase | **Phases 0, 1, 2 complete. ⛔ STOP reached on 2026-10-26.** Waiting for a user message starting with `GO` (with answers to D-013 Q1–Q5 or none = defaults). Do **not** write code or start Phase 3 before that. |
-| On GO | 1) log the answers in DECISIONS.md (`[USER]` tags on D-013; defaults for the rest); 2) run Phase 3 batches 1→10 (TARGET.md §10) without stopping except for a blocking anomaly or an irreversible decision; 3) Phase 4 → `REPORT.md`. |
+| Phase | **GO received 2026-10-26** (D-013: Q1/Q2/Q3/Q5 defaults, Q4 amended: e-mail never public). **Phase 3 in progress** — batch 1 (tooling). Run batches 1→10 (TARGET.md §10) without stopping except for a blocking anomaly or an irreversible decision; then Phase 4 → `REPORT.md`. **Never push any branch** (user pushes after reviewing REPORT.md). |
+| Dev toolchain | Node **26.12.1** installed via nvm (not the default alias; prefix every shell command with `export PATH="$HOME/.nvm/versions/node/v26.12.1/bin:$PATH"`); pnpm 12.15.0 installed into that prefix (`npm i -g pnpm@12.15.0`; Node 26 has no corepack). |
 | Working branch | `modernize/2026` (started clean from `origin/main` @ `ccfe293`, no upstream tracking) |
 | Baseline branch | `main` = `origin/main` @ `ccfe293` ("tags", 2023-03-12). Never touched. |
 | Preserved WIP | `wip/local-uncommitted-2026-10-26` @ `f3bb4af` = the dirty working tree found at mission start (D-001). Never push. |
@@ -25,7 +25,9 @@
 - [x] P2 `TARGET.md` + `adr/ADR-001…012`
 - [x] ⛔ STOP summary delivered (top 10, stack table, 5 questions)
 - [ ] GO received → decisions logged
-- [ ] P3.1 Tooling · [ ] P3.2 DB · [ ] P3.3 Auth & RBAC · [ ] P3.4 API parity · [ ] P3.5 Storage · [ ] P3.6 Notifications · [ ] P3.7 Web · [ ] P3.8 E2E · [ ] P3.9 Docker & CI · [ ] P3.10 Docs (README, DEPLOY.md, MIGRATION.md)
+- [x] P3.1 Tooling (pnpm 12 workspace, TS 6 strict presets, ESLint 10 flat + Prettier, Vitest 5 projects, `packages/shared` contract, API + web skeletons, legacy apps removed) · [ ] P3.2 DB · [ ] P3.3 Auth & RBAC · [ ] P3.4 API parity · [ ] P3.5 Storage · [ ] P3.6 Notifications · [ ] P3.7 Web · [ ] P3.8 E2E · [ ] P3.9 Docker & CI (also: re-enable knip `exports`/`types` rules to `error` in `knip.json`) · [ ] P3.10 Docs (README, DEPLOY.md, MIGRATION.md)
+
+Batch gate used for every batch: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm knip` (all with Node 26 on PATH).
 - [ ] P4 clean-clone verification → `REPORT.md`
 
 ## Facts established (verified 2026-10-26, do not re-derive)

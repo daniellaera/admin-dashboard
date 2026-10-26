@@ -1,0 +1,28 @@
+# gitleaks configuration — run in CI over the full history.
+# Extends the default ruleset and adds the pattern that the default rules missed
+# in this repository's history (a Postgres URI with an embedded password).
+title = "devconnector"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "postgres-uri-with-password"
+description = "PostgreSQL connection string with an embedded password"
+regex = '''postgres(?:ql)?://[A-Za-z0-9._%+-]+:([^@\s'"`]{4,})@[A-Za-z0-9.-]+'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+
+[rules.allowlist]
+# local-only placeholders used in docs, compose files and tests
+regexes = [
+  '''postgres(?:ql)?://[^:]+:(postgres|devconnector|password|changeme|test|secret|\*\*\*)@''',
+]
+
+[allowlist]
+description = "Documentation that references the leak by location only (values are masked)"
+paths = [
+  '''docs/modernize/appendix/secret-scan\.md''',
+  '''docs/modernize/AUDIT\.md''',
+  '''pnpm-lock\.yaml''',
+]

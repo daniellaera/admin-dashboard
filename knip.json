@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "rules": {
+    "exports": "off",
+    "types": "off"
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["e2e/**/*.ts"]
+    },
+    "packages/config": { "entry": [] },
+    "packages/shared": {},
+    "apps/api": {
+      "entry": ["src/scripts/*.ts", "test/**/*.ts"],
+      "ignoreDependencies": ["pino-pretty"]
+    },
+    "apps/web": {
+      "entry": ["src/routes/**/*.tsx"]
+    }
+  }
+}

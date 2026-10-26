@@ -70,6 +70,8 @@ Tables are PascalCase quoted identifiers created by Prisma migrations (`main:bac
 
 Missing today but implied by the UI or the brief (new in the rebuild): update/delete experience & education (UI only adds), unlike, server-side pagination, `GET /me`, users administration, notification inbox, email/password management, password reset, email verification.
 
+**Privacy rule (D-013 Q4, `[USER]`):** no public endpoint or page ever returns or renders a user's e-mail. Author cards and public profiles expose `displayName` (= `username`, else `Developer #<id>`) and the avatar only. E-mails appear only in `GET /auth/me`, `GET /me/*` (owner) and `GET /admin/*` (admins). Every endpoint returning user data is covered by the authorization matrix (anonymous / other user / owner / admin) in the integration tests — this is checklist item **PRIV-01** ⬜.
+
 ## 4. Authentication & account flows (as-is)
 
 | ID | Flow | As-is behaviour (evidence) | Target (brief) | Status |
@@ -142,8 +144,8 @@ Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeSc
 | UI-03 | `/privacy` → `Privacy` | public | — | prose page: tag "Updated on Apr 12, 2022", title "Privacy Policy", sections What we collect (Creation of an account / Analytics / Social Media), Purpose (4 bullets), Changes, Contact us (placeholder "please contact us at ...") — generic template text | ⬜ (keep structure, truthful content, contact from env) |
 | UI-04 | `/terms` → `Terms` | public | — | prose page: "Updated on Apr 12, 2022", "Terms of Service", General, Changes, Contact us (placeholder) | ⬜ |
 | UI-05 | `/posts` → public `Posts` feed | public | API-03 | 5 per page (client-side), each: title + random-colour type badge, content, author line (avatar, `username or email - 19th February 2023`), tag chips, like button with count (disabled + tooltip "you must be logged in to like the post" when logged out; "Smash the like button!" when in), comment-count button → detail; "New posts" realtime chip (RT-01); states: Empty "Posts will show up here!", Loading, Result "Oops!" | ⬜ (server pagination, stable badge colours) |
-| UI-06 | `/posts/:id` → public `Post` detail | public (comment needs session) | API-05 + API-22 | toolbar "Post {id}" + "Back" → `/posts`; title, content, author line; `CommentForm` (input "write your comment here", rounded, "Add" button, toast "{text} has been added", socket RT-02) when signed in else Empty "You need to login to comment the post"; comments list (text + author line by e-mail + date); no like button here, no edit/delete | ⬜ |
-| UI-07 | `/developers` → `Developers` | public | API-09 | card grid (`minmax(300px,1fr)`): avatar, ✚ bold username + green outline badge "Developer" + e-mail (✔ was "username - email" / "company - website" + ⋮ menu button), bio, skill tags, footer button ✚ "Connect" with user-plus icon (✔ "Follow") — **no handler**; states Empty "Developers will show up here!", Loading, Result | ⬜ (public profiles only; Connect/Follow button dropped — MK-06) |
+| UI-06 | `/posts/:id` → public `Post` detail | public (comment needs session) | API-05 + API-22 | toolbar "Post {id}" + "Back" → `/posts`; title, content, author line; `CommentForm` (input "write your comment here", rounded, "Add" button, toast "{text} has been added", socket RT-02) when signed in else Empty "You need to login to comment the post"; comments list (text + author line by e-mail + date); no like button here, no edit/delete | ⬜ (author lines show `displayName`, never e-mail — PRIV-01; like button added here too) |
+| UI-07 | `/developers` → `Developers` | public | API-09 | card grid (`minmax(300px,1fr)`): avatar, ✚ bold username + green outline badge "Developer" + e-mail (✔ was "username - email" / "company - website" + ⋮ menu button), bio, skill tags, footer button ✚ "Connect" with user-plus icon (✔ "Follow") — **no handler**; states Empty "Developers will show up here!", Loading, Result | ⬜ (public profiles only; **no e-mail — show company/website instead** (PRIV-01); Connect/Follow button dropped — MK-06) |
 | UI-08 | `*` → `NotFound` | public | — | theme-aware illustration, "Oops", "Sorry, we couldn't find the page you're looking for.", "Back to home"; rendered without Nav/Footer | ⬜ |
 | UI-09 | `/admin` → `Dashboard` | session | ⚠ `fetchUserStats` | stat cards "Total Users" / "Active Users" / "Disabled Users"; card "User Roles" (Member, Guest, Admin with `n/total` + progress bars); card "User Status" (circular progress active %, legend Active/Disabled); lists "Recently Added" / "Recently Updated" (avatar initials, name, email, `formatDistanceToNow`) | ⬜ (real metrics: users, posts, comments, likes, recent sign-ups; roles admin/user) |
 | UI-10 | `/admin/profile` → `Profile` | session | API-10, API-17, API-20 | toolbar "Profile"; card "Profile details" with soft-rounded tabs **Profile** (`ProfileForm`), **Password** (`PasswordForm`, AU-08), **Danger Zone** (red tab, AU-09); below: `ExperienceList` and `EducationList` cards | ⬜ |
@@ -201,7 +203,18 @@ Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeSc
 | OPS-05 | Seed | `prisma db seed` | `pnpm db:seed` (dev) | ⬜ |
 | OPS-06 | Logs / health | `morgan('dev')`, `console.log`; no health endpoint | pino, `/health`, `/ready` | ⬜ |
 
-## 13. Parity summary
+## 13. Uncommitted feature edits extracted from the WIP snapshot (D-014, `[USER]`-requested)
+
+| ID | WIP edit | Parity item | Status |
+|---|---|---|---|
+| WIP-01 | Profile "Public" switch + `isPublic` on update | UI-10a, API-14, enforced in API-09 (default public, Q4) | ⬜ |
+| WIP-02 | Developers card redesign (bold username + "Developer" badge, wider grid, empty bio fallback) | UI-07 layout (without the e-mail line, PRIV-01; without the Connect button, MK-06) | ⬜ |
+| WIP-03 | "Home" entry in the signed-in navbar menu | SH-03 | ⬜ |
+| WIP-04 | Duplicate-like guard | API-23 via `PRIMARY KEY (post_id, user_id)` | ⬜ |
+| WIP-05 | Idempotent seed (`upsert`) | OPS-05 | ⬜ |
+| WIP-06 | Presence socket events, unused `PostForm` props, `fetchByDateArrow` mount, Prisma datasource tweaks | — | ➖ dropped (D-014) |
+
+## 14. Parity summary
 
 | Area | Rows | Keep | Drop (decision) |
 |---|---|---|---|

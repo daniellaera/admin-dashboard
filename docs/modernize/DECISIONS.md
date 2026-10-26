@@ -88,7 +88,37 @@ Three background agents: (1) exhaustive frontend functional inventory → `appen
 Integer serial ids stay (`/posts/:id`, `/admin/posts/:id`); `users.id` takes the legacy `Profile.id` so ownership checks need no join and imported URLs keep working; Supabase UUIDs are kept only in `users.legacy_auth_id`. Enum values (`FUNNY, TECH, RANDOM, NEWS, SERIOUS`) unchanged. Tags and skills become `text[]` validated against the shared option lists (removes the data-corrupting junction tables, AUDIT CQ-01).
 
 ## D-013 — Open questions submitted at the STOP (defaults apply if GO comes without answers)
-*2026-10-26 · pending `[USER]`*
+*2026-10-26 · `[USER]` GO received. Q1, Q2, Q3, Q5: **defaults accepted** (Mantine 9, one image, real admin-only users administration, transactional mails always + notification mails opt-in). **Q4 amended by the user:** profiles are public by default, **but a user's e-mail is never exposed by any public endpoint or page, regardless of `is_public`; only the owner (`/auth/me`, `/me/*`) and admins (`/admin/*`) can see it.** Consequences: author cards and public profiles carry `displayName` = `username` or `Developer #<id>` (never the e-mail, unlike today's UI), the SSE payloads carry ids only, and the authorization test matrix has an explicit "e-mail visibility" dimension (anonymous / other user / owner / admin) for every endpoint that returns user data. Three extra instructions were also given: (a) extract the real feature edits from the WIP snapshot into FEATURES.md (→ D-014); (b) the old deploy-on-push workflow is deleted in the very first Phase 3 commit (done: `191787f`); (c) **never push any branch** — the user pushes after reviewing REPORT.md.*
+
+## D-014 — Feature edits extracted from `wip/local-uncommitted-2026-10-26` `[USER]`-requested
+*2026-10-26 · `git diff origin/main wip/… -w` excluding lockfiles and the deleted migrations: 16 files, 126+/80−*
+
+| WIP edit | Functional? | Disposition in the rebuild |
+|---|---|---|
+| `ProfileForm.tsx`: "Public" `Switch` + helper text; `profile.ts`: `isPublic` accepted on update | yes | **Parity** — FEATURES UI-10a, API-14 (`PATCH /me/profile {isPublic}`), enforced by `GET /profiles` (Q4: default public) |
+| `Developers.tsx`: card header = bold username + green outline badge "Developer" + e-mail line; empty bio fallback; grid spacing 8; "Follow" → "Connect" with user-plus icon | yes (visual) | **Parity for the layout** (username + badge, spacing); **e-mail line dropped** (Q4 rule); Connect button dropped (MK-06) |
+| `Nav.tsx`: "Home" entry in the signed-in menu | yes | **Parity** — SH-03 |
+| `like.ts`: second lookup to refuse a duplicate like (`existingLike?.createdAt === null`, never true) | intent only | Intent kept structurally: `PRIMARY KEY (post_id, user_id)` + idempotent `PUT /posts/:id/like` |
+| `seed.ts`: `create` → `upsert` | yes (ops) | Intent kept: the new seed is idempotent |
+| `Signin.tsx`: `socket.emit('new-user-add')` / `socket.on('get-users')` | no server handler | Dropped (RT-03) |
+| `PostForm.tsx`: six new optional props, never read | no | Dropped |
+| `posts.ts`: `router.use('/fetchByDateArrow/:postId', auth)` | no handler | Dropped (API-25); the feed is already newest-first |
+| `schema.prisma`: `directUrl`, `shadowDatabaseUrl`; `package.json` bumps; `PostTable`/`Blog`/`ProfileAvatar` type tweaks | no | Superseded by the rebuild |
+
+## D-016 — `[USER]` amendments for batch 9 (CI) and batch 10 (DEPLOY.md)
+*2026-10-26 · received during batch 1, applied in batches 9–10; supersedes the corresponding parts of ADR-010/ADR-011*
+
+- **CI runs on GitHub-hosted runners only.** Never configure or document a self-hosted GitHub runner (public repo with forks).
+- **Multi-arch image without QEMU:** build `linux/amd64` on `ubuntu-latest` and `linux/arm64` natively on `ubuntu-24.04-arm`, push each by digest, then merge with `docker buildx imagetools create` into one manifest list.
+- **Registry:** `ghcr.io/daniellaera/admin-dashboard`, tags = commit `sha` and `main`. Images are pushed **only from `main`**, never from pull requests (PRs build without pushing).
+- Keep the workflow Gitea-compatible as a secondary target; GHCR is the primary registry.
+- **DEPLOY.md = pull-based CD** on a Proxmox **unprivileged** LXC (nesting + keyctl) running Docker: `compose.prod.yml` pulling the public GHCR image (no registry auth), a systemd service + timer running `docker compose pull && docker compose up -d` every 5 minutes, Postgres data and uploads on **bind mounts**, a `pg_dump` backup timer, the Nginx Proxy Manager upstream configuration, and rollback by pinning a `sha` tag in the compose file.
+
+## D-015 — Dev runtime and API client
+*2026-10-26*
+
+- API dev server runs with `tsx watch` (handles workspace TypeScript imports and `.ts` extensions without a build step); production is a single `tsup`/esbuild bundle that inlines `@devconnector/shared` and externalises native/third-party deps. Node's native type stripping remains possible (`erasableSyntaxOnly`, `.ts` import extensions) but is not relied upon. Amends ADR-001's "native type stripping" note.
+- The web app uses a thin typed `fetch` client built on the DTO types in `packages/shared` instead of `hono/client` RPC inference: cross-package inference of ~60 validated routes is a known compile-time cost and couples the SPA to the API's route object; the contract is still enforced because API handlers are typed against the same DTOs. `AppType` stays exported for anyone who wants `hc`. Amends ADR-002/ADR-008. Reversible (one file).
 
 | # | Question | Default |
 |---|---|---|

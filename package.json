@@ -1,0 +1,49 @@
+{
+  "name": "devconnector",
+  "version": "2.0.0",
+  "private": true,
+  "description": "DevConnector — a self-hosted social network for developers (2026 rebuild)",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=26.0.0",
+    "pnpm": ">=12.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter ./apps/* dev",
+    "build": "pnpm -r --filter ./apps/* build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run --project shared --project api-unit --project web",
+    "test:integration": "vitest run --project api-integration",
+    "test:e2e": "playwright test",
+    "knip": "knip",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "db:generate": "pnpm --filter @devconnector/api db:generate",
+    "db:migrate": "pnpm --filter @devconnector/api db:migrate",
+    "db:seed": "pnpm --filter @devconnector/api db:seed",
+    "db:reset": "pnpm --filter @devconnector/api db:reset",
+    "db:studio": "pnpm --filter @devconnector/api db:studio"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "knip": "^6.43.0",
+    "prettier": "^3.9.10",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "catalog:"
+  }
+}
