@@ -37,6 +37,7 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
         });
         // Object, not a bare boolean: it is mutated from the abort callback.
         const state = { open: true };
+        const isOpen = () => state.open; // a call: TypeScript cannot narrow it away
         stream.onAbort(() => {
           state.open = false;
           unsubscribe();
@@ -47,7 +48,7 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
           event: 'ready',
           data: JSON.stringify({ channels: [...channels] }),
         });
-        while (state.open) {
+        while (isOpen()) {
           const next = queue.shift();
           if (next) {
             counter += 1;
@@ -69,7 +70,7 @@ export function eventRoutes(events: EventBus, heartbeatMs = HEARTBEAT_MS) {
               resolve(true);
             };
           });
-          if (!woke && state.open)
+          if (!woke && isOpen())
             await stream.writeSSE({ event: 'ping', data: JSON.stringify({ type: 'ping' }) });
         }
       });
