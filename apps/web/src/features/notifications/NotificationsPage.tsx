@@ -193,14 +193,16 @@ function PreferencesForm({ saved }: { saved: NotificationPreferenceDto[] }) {
           disabled={!dirty}
           loading={save.isPending}
           onClick={() => {
-            save.mutate(draft, {
-              onSuccess: () => {
+            // The form is keyed on the saved state and remounts after the save: per-mutate
+            // callbacks would be skipped once the component is gone, so toast from the promise.
+            save.mutateAsync(draft).then(
+              () => {
                 toast.success('Preferences saved');
               },
-              onError: (e) => {
+              (e: unknown) => {
                 toast.error(e);
               },
-            });
+            );
           }}
         >
           Save

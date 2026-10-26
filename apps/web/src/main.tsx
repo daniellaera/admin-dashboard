@@ -41,15 +41,16 @@ if (!container) throw new Error('Root element #root not found');
 createRoot(container).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="auto">
-      <ModalsProvider>
-        <Notifications position="bottom-right" />
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {/* Modal contents (sudo prompt, confirm dialogs) use queries: ModalsProvider sits below the QueryClientProvider. */}
+        <ModalsProvider>
+          <Notifications position="bottom-right" />
           <RouterProvider router={router} />
           {/* Both devtools compile to nothing in production builds. */}
           <ReactQueryDevtools buttonPosition="bottom-left" />
           <TanStackRouterDevtools router={router} position="bottom-left" />
-        </QueryClientProvider>
-      </ModalsProvider>
+        </ModalsProvider>
+      </QueryClientProvider>
     </MantineProvider>
   </StrictMode>,
 );

@@ -454,15 +454,13 @@ function SettingsForm({ current }: { current: RegistrationMode }) {
             loading={save.isPending}
             disabled={mode === current}
             onClick={() => {
-              save.mutate(
-                { registrationMode: mode },
-                {
-                  onSuccess: () => {
-                    toast.success('Settings saved');
-                  },
-                  onError: (e) => {
-                    toast.error(e);
-                  },
+              // Keyed form (see Preferences): toast from the promise, not from mutate callbacks.
+              save.mutateAsync({ registrationMode: mode }).then(
+                () => {
+                  toast.success('Settings saved');
+                },
+                (e: unknown) => {
+                  toast.error(e);
                 },
               );
             }}

@@ -35,10 +35,12 @@ export function renderWithProviders(
   function Wrapper({ children }: { children?: ReactNode }) {
     return (
       <MantineProvider theme={theme}>
-        <ModalsProvider>
-          <Notifications />
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        </ModalsProvider>
+        <QueryClientProvider client={queryClient}>
+          <ModalsProvider>
+            <Notifications />
+            {children}
+          </ModalsProvider>
+        </QueryClientProvider>
       </MantineProvider>
     );
   }

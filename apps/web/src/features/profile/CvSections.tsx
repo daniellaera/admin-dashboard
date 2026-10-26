@@ -25,12 +25,14 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
+import { type ChangeEvent, useState } from 'react';
 import {
   type FieldErrors,
   type Path,
+  type PathValue,
   useForm,
   type UseFormRegister,
+  type UseFormSetValue,
   type UseFormWatch,
 } from 'react-hook-form';
 import { applyServerErrors, FormError } from '@/components/FormError.tsx';
@@ -48,13 +50,20 @@ interface Period {
 function PeriodFields<T extends Period>({
   register,
   watch,
+  setValue,
   errors,
 }: {
   register: UseFormRegister<T>;
   watch: UseFormWatch<T>;
+  setValue: UseFormSetValue<T>;
   errors: FieldErrors<T>;
 }) {
   const current = watch('isCurrent' as Path<T>) as unknown as boolean;
+  // A current position has no end date: clear it so a stale value is never submitted.
+  const onCurrentChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.currentTarget.checked)
+      setValue('endedOn' as Path<T>, null as PathValue<T, Path<T>>, { shouldValidate: true });
+  };
   return (
     <>
       <SimpleGrid cols={2}>
@@ -72,10 +81,33 @@ function PeriodFields<T extends Period>({
           {...register('endedOn' as Path<T>, { setValueAs: (v: string) => (v === '' ? null : v) })}
         />
       </SimpleGrid>
-      <Checkbox label="Current position?" {...register('isCurrent' as Path<T>)} />
+      <Checkbox
+        label="Current position?"
+        {...register('isCurrent' as Path<T>, { onChange: onCurrentChange })}
+      />
     </>
   );
 }
+
+/** Only the editable fields: the DTO also carries `id`, which the strict input schema rejects. */
+const experienceValues = (e: ExperienceDto): ExperienceInput => ({
+  title: e.title,
+  description: e.description,
+  company: e.company,
+  location: e.location,
+  startedOn: e.startedOn,
+  endedOn: e.endedOn,
+  isCurrent: e.isCurrent,
+});
+const educationValues = (e: EducationDto): EducationInput => ({
+  school: e.school,
+  description: e.description,
+  degree: e.degree,
+  fieldOfStudy: e.fieldOfStudy,
+  startedOn: e.startedOn,
+  endedOn: e.endedOn,
+  isCurrent: e.isCurrent,
+});
 
 const EMPTY_EXPERIENCE: ExperienceInput = {
   title: '',
@@ -108,12 +140,13 @@ function ExperienceModal({
   const {
     register,
     watch,
+    setValue,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ExperienceInput>({
     resolver: zodResolver(experienceInputSchema),
-    defaultValues: initial ? { ...initial } : EMPTY_EXPERIENCE,
+    defaultValues: initial ? experienceValues(initial) : EMPTY_EXPERIENCE,
   });
   const fields: Path<ExperienceInput>[] = [
     'title',
@@ -154,7 +187,7 @@ function ExperienceModal({
         />
         <TextInput label="Company" error={errors.company?.message} {...register('company')} />
         <TextInput label="Location" error={errors.location?.message} {...register('location')} />
-        <PeriodFields register={register} watch={watch} errors={errors} />
+        <PeriodFields register={register} watch={watch} setValue={setValue} errors={errors} />
         <FormError message={general} />
         <Group justify="flex-end">
           <Button
@@ -181,12 +214,13 @@ function EducationModal({
   const {
     register,
     watch,
+    setValue,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<EducationInput>({
     resolver: zodResolver(educationInputSchema),
-    defaultValues: initial ? { ...initial } : EMPTY_EDUCATION,
+    defaultValues: initial ? educationValues(initial) : EMPTY_EDUCATION,
   });
   const fields: Path<EducationInput>[] = [
     'school',
@@ -231,7 +265,7 @@ function EducationModal({
           error={errors.fieldOfStudy?.message}
           {...register('fieldOfStudy')}
         />
-        <PeriodFields register={register} watch={watch} errors={errors} />
+        <PeriodFields register={register} watch={watch} setValue={setValue} errors={errors} />
         <FormError message={general} />
         <Group justify="flex-end">
           <Button
