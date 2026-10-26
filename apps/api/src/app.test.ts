@@ -31,7 +31,7 @@ describe('app skeleton', () => {
     const broken = build({ db: () => Promise.reject(new Error('down')) });
     const res = await broken.request('/api/v1/ready');
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ status: 'not-ready', checks: { db: false } });
+    expect(await res.json()).toMatchObject({ status: 'not-ready', checks: { db: false } });
   });
 
   it('renders unknown routes as RFC 9457 problem details without a stack trace', async () => {

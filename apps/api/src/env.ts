@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
@@ -89,6 +91,7 @@ export function testEnv(overrides: Partial<NodeJS.ProcessEnv> = {}): Env {
     AUTH_SECRET: 'test-secret-test-secret-test-secret-test-secret',
     APP_URL: 'http://localhost:5173',
     MIGRATE_ON_START: 'false',
+    UPLOADS_DIR: path.join(os.tmpdir(), 'devconnector-test-uploads'),
     ...overrides,
   });
 }

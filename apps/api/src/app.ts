@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler, PayloadTooLargeError } from './lib/error
 import { createMemoryEventBus } from './lib/events.ts';
 import { createRateLimiter, rateLimit } from './lib/rate-limit.ts';
 import { requestContext } from './lib/request-context.ts';
+import { createLocalStorage } from './lib/storage.ts';
 import { adminRoutes } from './modules/admin/routes.ts';
 import { createAdminService } from './modules/admin/service.ts';
 import { createAuditService } from './modules/audit/service.ts';
@@ -18,6 +19,8 @@ import { catalogRoutes } from './modules/catalog/routes.ts';
 import { createCatalogService } from './modules/catalog/service.ts';
 import { configRoutes } from './modules/config/routes.ts';
 import { createCvService } from './modules/cv/service.ts';
+import { avatarRoutes, fileRoutes } from './modules/files/routes.ts';
+import { createFilesService } from './modules/files/service.ts';
 import { healthRoutes } from './modules/health/routes.ts';
 import { createInvitationsService } from './modules/invitations/service.ts';
 import { meRoutes } from './modules/me/routes.ts';
@@ -38,13 +41,25 @@ const JSON_BODY_LIMIT = 256 * 1024;
 export function createApp(deps: AppDeps) {
   const { env, logger, db } = deps;
   const events = deps.events ?? createMemoryEventBus();
+  const storage = deps.storage ?? createLocalStorage(env.UPLOADS_DIR);
+  const maxUploadBytes = Math.round(env.MAX_UPLOAD_MB * 1_048_576);
 
   const audit = createAuditService(db);
   const settings = createSettingsService(db, audit);
   const catalog = createCatalogService(db);
   const sessions = createSessionService(db, env);
   const invitations = createInvitationsService({ db, env, audit });
-  const auth = createAuthService({ db, env, sessions, settings, invitations, audit, log: logger });
+  const files = createFilesService({ db, storage, maxUploadBytes, log: logger });
+  const auth = createAuthService({
+    db,
+    env,
+    sessions,
+    settings,
+    invitations,
+    audit,
+    log: logger,
+    onAccountDeleted: (userId) => files.deleteAllFor(userId),
+  });
   const github = createGitHubClient(env, deps.fetchImpl);
   const profiles = createProfilesService(db, catalog);
   const cv = createCvService(db);
@@ -55,24 +70,36 @@ export function createApp(deps: AppDeps) {
     audit,
     invitations,
     applyRole: auth.applyRole,
+    onUserDeleted: (userId) => files.deleteAllFor(userId),
   });
   const apiLimiter = createRateLimiter({ windowMs: 60_000, max: env.RATE_LIMIT_API_PER_MINUTE });
 
+  // JSON bodies are small; the avatar upload has its own, larger limit on its route.
+  const jsonLimit = bodyLimit({
+    maxSize: JSON_BODY_LIMIT,
+    onError: () => {
+      throw new PayloadTooLargeError('Request body too large');
+    },
+  });
+
   const api = new Hono<AppEnv>()
     .use(rateLimit(apiLimiter))
-    .use(
-      bodyLimit({
-        maxSize: JSON_BODY_LIMIT,
-        onError: () => {
-          throw new PayloadTooLargeError('Request body too large');
-        },
+    .use(async (c, next) => {
+      if (c.req.path === `${API_PREFIX}/me/avatar`) return next();
+      return jsonLimit(c, next);
+    })
+    .use(sessionMiddleware(sessions))
+    .route(
+      '/',
+      healthRoutes({
+        ...deps,
+        readiness: { ...deps.readiness, uploads: () => storage.ensureWritable() },
       }),
     )
-    .use(sessionMiddleware(sessions))
-    .route('/', healthRoutes(deps))
     .route('/', configRoutes(env, settings))
     .route('/catalog', catalogRoutes(catalog))
     .route('/auth', authRoutes({ env, auth, invitations, github }))
+    .route('/me/avatar', avatarRoutes(files, maxUploadBytes))
     .route('/me', meRoutes({ profiles, cv, posts }))
     .route('/profiles', profilesRoutes(profiles))
     .route('/posts', postsRoutes(posts))
@@ -108,6 +135,7 @@ export function createApp(deps: AppDeps) {
     // Rejects state-changing requests that a browser sent from another site (lib/csrf.ts).
     .use(`${API_PREFIX}/*`, csrfProtection(env.appOrigin))
     .route(API_PREFIX, api)
+    .route('/files', fileRoutes(files))
     .notFound(notFoundHandler)
     .onError(errorHandler);
 

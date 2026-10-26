@@ -1,5 +1,8 @@
 import type { Me } from '@devconnector/shared';
 import { desc, eq } from 'drizzle-orm';
+import { mkdtempSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import pino from 'pino';
 import { expect } from 'vitest';
 import { type App, createApp } from '../src/app.ts';
@@ -9,6 +12,9 @@ import { testDatabase } from './db.ts';
 
 export const ORIGIN = 'http://localhost:5173';
 
+/** Throw-away uploads folder for the whole test run. */
+export const TEST_UPLOADS_DIR = mkdtempSync(path.join(os.tmpdir(), 'devconnector-uploads-'));
+
 /** Builds the real app against the test database; `envOverrides` tune behaviour per test. */
 export async function buildApp(
   envOverrides: Partial<NodeJS.ProcessEnv> = {},
@@ -16,7 +22,7 @@ export async function buildApp(
 ): Promise<App> {
   const { db, ping } = await testDatabase();
   return createApp({
-    env: testEnv(envOverrides),
+    env: testEnv({ UPLOADS_DIR: TEST_UPLOADS_DIR, ...envOverrides }),
     logger: pino({ level: 'silent' }),
     db,
     version: 'test',

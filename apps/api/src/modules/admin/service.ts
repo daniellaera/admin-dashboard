@@ -24,6 +24,8 @@ export interface AdminDeps {
   invitations: InvitationsService;
   /** Role changes are applied by the auth service (revokes sessions, notifies). */
   applyRole: AuthService['applyRole'];
+  /** Cleanup hook after a user row is deleted (e.g. avatar files). */
+  onUserDeleted?: (userId: number) => Promise<void>;
 }
 
 /**
@@ -32,7 +34,14 @@ export interface AdminDeps {
  * - an admin may only act on `user` accounts and can never change a role;
  * - only the owner changes roles (to admin/user), and only for verified accounts.
  */
-export function createAdminService({ db, log, audit, invitations, applyRole }: AdminDeps) {
+export function createAdminService({
+  db,
+  log,
+  audit,
+  invitations,
+  applyRole,
+  onUserDeleted,
+}: AdminDeps) {
   const postCount = sql<number>`(select count(*)::int from ${posts} p where p.author_id = ${users.id})`;
   const lastSeen = sql<Date | null>`(select max(s.last_seen_at) from ${sessions} s where s.user_id = ${users.id})`;
 
@@ -191,6 +200,7 @@ export function createAdminService({ db, log, audit, invitations, applyRole }: A
       const target = await getOne(id);
       assertCanActOn(actor, target);
       await db.delete(users).where(eq(users.id, id));
+      await onUserDeleted?.(id);
       await audit.record({
         action: 'user.delete',
         actorId: actor.id,

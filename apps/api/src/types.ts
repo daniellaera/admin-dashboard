@@ -2,6 +2,7 @@ import type { Logger } from 'pino';
 import type { Db } from './db/client.ts';
 import type { Env } from './env.ts';
 import type { EventBus } from './lib/events.ts';
+import type { Storage } from './lib/storage.ts';
 import type { CurrentUser } from './modules/auth/session.ts';
 
 /** Request-scoped variables available on every Hono context. */
@@ -32,4 +33,6 @@ export interface AppDeps {
   fetchImpl?: typeof fetch;
   /** Event bus (Postgres-backed in production, in-memory by default). */
   events?: EventBus;
+  /** File storage (local volume at UPLOADS_DIR by default). */
+  storage?: Storage;
 }
