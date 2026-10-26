@@ -19,11 +19,14 @@ import { catalogRoutes } from './modules/catalog/routes.ts';
 import { createCatalogService } from './modules/catalog/service.ts';
 import { configRoutes } from './modules/config/routes.ts';
 import { createCvService } from './modules/cv/service.ts';
+import { eventRoutes } from './modules/events/routes.ts';
 import { avatarRoutes, fileRoutes } from './modules/files/routes.ts';
 import { createFilesService } from './modules/files/service.ts';
 import { healthRoutes } from './modules/health/routes.ts';
 import { createInvitationsService } from './modules/invitations/service.ts';
 import { meRoutes } from './modules/me/routes.ts';
+import { notificationRoutes } from './modules/notifications/routes.ts';
+import { createNotificationsService } from './modules/notifications/service.ts';
 import { commentsRoutes, postsRoutes } from './modules/posts/routes.ts';
 import { createPostsService } from './modules/posts/service.ts';
 import { profilesRoutes } from './modules/profiles/routes.ts';
@@ -63,7 +66,14 @@ export function createApp(deps: AppDeps) {
   const github = createGitHubClient(env, deps.fetchImpl);
   const profiles = createProfilesService(db, catalog);
   const cv = createCvService(db);
-  const posts = createPostsService({ db, events, catalog, log: logger });
+  const notifications = createNotificationsService({ db, env, events, log: logger });
+  const posts = createPostsService({
+    db,
+    events,
+    catalog,
+    log: logger,
+    hooks: notifications.hooks,
+  });
   const admin = createAdminService({
     db,
     log: logger,
@@ -104,6 +114,8 @@ export function createApp(deps: AppDeps) {
     .route('/profiles', profilesRoutes(profiles))
     .route('/posts', postsRoutes(posts))
     .route('/comments', commentsRoutes(posts))
+    .route('/notifications', notificationRoutes(notifications))
+    .route('/events', eventRoutes(events, deps.sseHeartbeatMs))
     .route('/admin', adminRoutes({ admin, invitations, settings, audit, catalog }));
 
   const app = new Hono<AppEnv>()

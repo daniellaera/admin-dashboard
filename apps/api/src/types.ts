@@ -35,4 +35,6 @@ export interface AppDeps {
   events?: EventBus;
   /** File storage (local volume at UPLOADS_DIR by default). */
   storage?: Storage;
+  /** SSE heartbeat interval override (tests use a short one). */
+  sseHeartbeatMs?: number;
 }

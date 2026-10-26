@@ -117,22 +117,20 @@ Missing today but implied by the UI or the brief (new in the rebuild): update/de
 
 | ID | Event | Emitter → receiver | Payload | UI effect | Target | Status |
 |---|---|---|---|---|---|---|
-| RT-01 | `createPost` → `postBroadcasted` | PostForm after a successful create (`PostForm.tsx:69`) → server rebroadcasts to all other sockets (`app.ts:27-29`) | `{post, username}` | Public feed shows a centred blue "New posts ↓" chip (`ScaleFade`); clicking refetches and hides it (`Posts.tsx:36-43, 73-88`); listener registered without cleanup | SSE channel `posts` published by the server when a post is published | ⬜ |
-| RT-02 | `addComment` → `commentBroadcasted` | CommentForm after create (`CommentForm.tsx:49`) → broadcast + **Novu trigger to the post author** (`app.ts:35-40`) | `{post, profile, comment}` | No UI listener for `commentBroadcasted` (only the notification) | server-side: insert notification → NOTIFY → SSE to the author; SSE channel `post:<id>` for live comments (improvement) | ⬜ |
+| RT-01 | `createPost` → `postBroadcasted` | PostForm after a successful create (`PostForm.tsx:69`) → server rebroadcasts to all other sockets (`app.ts:27-29`) | `{post, username}` | Public feed shows a centred blue "New posts ↓" chip (`ScaleFade`); clicking refetches and hides it (`Posts.tsx:36-43, 73-88`); listener registered without cleanup | SSE channel `posts` published by the server when a post is published | ✅ API |
+| RT-02 | `addComment` → `commentBroadcasted` | CommentForm after create (`CommentForm.tsx:49`) → broadcast + **Novu trigger to the post author** (`app.ts:35-40`) | `{post, profile, comment}` | No UI listener for `commentBroadcasted` (only the notification) | server-side: insert notification → NOTIFY → SSE to the author; SSE channel `post:<id>` for live comments (improvement) | ✅ API |
 | RT-03 | ✚ `new-user-add` / `get-users` | Signin emits, listens (`Signin.tsx:97-100`); **no server handler** | email | `console.log('users online')` | ➖ drop (never implemented server-side) | ➖ |
 | RT-04 | ☠ `createTask` | `pages/admin/WebSocket.tsx` (route commented out, hard-coded `io("http://localhost:8080")`) | `{task, userId}` | none | ➖ dead | ➖ |
-| RT-05 | Socket connection | opened at module load for **every** visitor (`constants.ts:29`), CORS wide open | — | — | SSE opened only on pages that need it; same-origin | ⬜ |
-
+| RT-05 | Socket connection | opened at module load for **every** visitor (`constants.ts:29`), CORS wide open | — | — | SSE opened only on pages that need it; same-origin | ✅ API |
 ## 7. Notifications (as-is: Novu)
 
 | ID | Feature | As-is | Target | Status |
 |---|---|---|---|---|
-| NT-01 | Subscriber lifecycle | `novu.subscribers.identify(profileId, {email})` on profile create (`profile.ts:52,74`), `subscribers.delete` on profile delete (`profile.ts:98`) | implicit (users table) | ⬜ |
-| NT-02 | "Someone commented on your post" | `novu.trigger('comment-template', {to:{subscriberId: postProfileId}, payload:{username: commenterEmail, postId}})` (`commentNotification.ts:5-12`) fired from the socket handler, i.e. **triggerable by any client for any profile**; produced only when the comment is added through the UI (REST + socket emit) | `notifications` row `type='comment'` for the post author (not for self-comments), SSE push, optional e-mail per preference | ⬜ |
-| NT-03 | In-app inbox | Navbar bell (`NovuProvider subscriberId={profile.id} applicationIdentifier='vTbMIBFNZdXt'` + `PopoverNotificationCenter`, `Nav.tsx:91-106`), landing Nav only (not in the admin shell), only when signed in: unseen count badge, popover list, click → `/posts/:postId`, dark/light aware, user preferences hidden, no footer | own bell + popover in **both** shells: unread count, paginated list, mark read / mark all read, click-through; preferences page (per type: in-app / e-mail) | ⬜ |
-| NT-04 | "New post" notification | commented out (`app.ts:32`) | optional type `new_post` (off by default) — not required for parity | ⬜ (nice-to-have) |
-| NT-05 | E-mail notifications | none (Novu templates had no e-mail channel in code) | brief requires SMTP e-mails with templates (verification, reset, magic link, comment notification per preference) | ⬜ |
-
+| NT-01 | Subscriber lifecycle | `novu.subscribers.identify(profileId, {email})` on profile create (`profile.ts:52,74`), `subscribers.delete` on profile delete (`profile.ts:98`) | implicit (users table) | ✅ API |
+| NT-02 | "Someone commented on your post" | `novu.trigger('comment-template', {to:{subscriberId: postProfileId}, payload:{username: commenterEmail, postId}})` (`commentNotification.ts:5-12`) fired from the socket handler, i.e. **triggerable by any client for any profile**; produced only when the comment is added through the UI (REST + socket emit) | `notifications` row `type='comment'` for the post author (not for self-comments), SSE push, optional e-mail per preference | ✅ API |
+| NT-03 | In-app inbox | Navbar bell (`NovuProvider subscriberId={profile.id} applicationIdentifier='vTbMIBFNZdXt'` + `PopoverNotificationCenter`, `Nav.tsx:91-106`), landing Nav only (not in the admin shell), only when signed in: unseen count badge, popover list, click → `/posts/:postId`, dark/light aware, user preferences hidden, no footer | own bell + popover in **both** shells: unread count, paginated list, mark read / mark all read, click-through; preferences page (per type: in-app / e-mail) | ✅ API |
+| NT-04 | "New post" notification | commented out (`app.ts:32`) | optional type `new_post` (off by default) — not required for parity | ✅ API (nice-to-have) |
+| NT-05 | E-mail notifications | none (Novu templates had no e-mail channel in code) | brief requires SMTP e-mails with templates (verification, reset, magic link, comment notification per preference) | ✅ API |
 ## 8. Frontend shell, routes and screens (as-is)
 
 Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeScript → ChakraProvider (stock theme, no extendTheme) → BrowserRouter → CookieBanner → AuthProvider → Routes` (`App.tsx`, `index.tsx`). 16 active routes, 3 commented out (`/login`, `/signup`, `/admin/websocket`).
@@ -216,8 +214,7 @@ Provider nesting: `StrictMode → QueryClientProvider (defaults) → ColorModeSc
 | OPS-03 | CI | GitHub Actions: on every push, path-filtered `flyctl deploy` of backend and/or frontend; no tests | GitHub + Gitea Actions: lint, typecheck, test, build, multi-arch image | ⬜ |
 | OPS-04 | DB migrations | Prisma migrate run manually from a laptop against Supabase (README) | versioned SQL migrations run by the API on start (or a one-shot job) | ✅ |
 | OPS-05 | Seed | `prisma db seed` | `pnpm db:seed` (dev) | ✅ |
-| OPS-06 | Logs / health | `morgan('dev')`, `console.log`; no health endpoint | pino, `/health`, `/ready` | ⬜ |
-
+| OPS-06 | Logs / health | `morgan('dev')`, `console.log`; no health endpoint | pino, `/health`, `/ready` | ✅ API |
 ## 13. Uncommitted feature edits extracted from the WIP snapshot (D-014, `[USER]`-requested)
 
 | ID | WIP edit | Parity item | Status |

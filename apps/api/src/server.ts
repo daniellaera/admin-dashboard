@@ -5,6 +5,8 @@ import { createDatabase } from './db/client.ts';
 import { runMigrations } from './db/migrate.ts';
 import { loadEnv } from './env.ts';
 import { createLogger } from './lib/logger.ts';
+import { createPgEventBus } from './lib/pg-events.ts';
+import { createMailTransport, createOutboxWorker } from './mail/worker.ts';
 import { bootstrapOwner } from './modules/auth/bootstrap.ts';
 import { createCatalogService } from './modules/catalog/service.ts';
 
@@ -31,10 +33,26 @@ async function main(): Promise<void> {
   await createCatalogService(database.db).ensureDefaults();
   await bootstrapOwner(database.db, env, logger);
 
+  // Realtime fan-out over Postgres LISTEN/NOTIFY and the SMTP outbox worker (ADR-006).
+  const events = createPgEventBus({
+    connectionString: env.DATABASE_URL,
+    pool: database.pool,
+    logger,
+  });
+  await events.start();
+  const outbox = createOutboxWorker({
+    db: database.db,
+    transport: createMailTransport(env),
+    from: env.MAIL_FROM,
+    logger,
+  });
+  outbox.start();
+
   const app = createApp({
     env,
     logger,
     db: database.db,
+    events,
     version: readVersion(),
     readiness: { database: database.ping },
   });
@@ -48,19 +66,22 @@ async function main(): Promise<void> {
     if (closing) return;
     closing = true;
     logger.info({ signal }, 'shutting down');
+    // Force exit if connections linger (e.g. open SSE streams).
+    setTimeout(() => process.exit(0), 10_000).unref();
     server.close((err) => {
       if (err) logger.error({ err }, 'error while closing the server');
-      database
-        .close()
+      void (async () => {
+        await outbox.stop();
+        await events.stop();
+        await database.close();
+      })()
         .catch((closeErr: unknown) => {
-          logger.error({ err: closeErr }, 'error while closing the database pool');
+          logger.error({ err: closeErr }, 'error during shutdown');
         })
         .finally(() => {
           process.exit(err ? 1 : 0);
         });
     });
-    // Force exit if connections linger (e.g. open SSE streams).
-    setTimeout(() => process.exit(0), 10_000).unref();
   };
   process.on('SIGTERM', () => {
     shutdown('SIGTERM');
