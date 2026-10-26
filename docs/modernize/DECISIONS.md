@@ -154,3 +154,12 @@ Implementation notes: the skills/tags catalog becomes database-backed (seeded wi
 - **E-mails in the UI (PRIV-01)** appear only on pages backed by admin DTOs (users table/detail, dashboard "Recently added", invitations, audit log), all behind `requireStaff`; every public component renders `displayName`.
 - **Staff user search** (SH-06) is a Mantine Spotlight (⌘K) over `GET /admin/users?q=`, shown only to owner/admin; members never see the control.
 - **Web unit tests** cover the ADR-013 matrix as rendered (`UsersPage.test.tsx`), the route guards (`guards.test.ts`) and the feed card (`PostCard.test.tsx`); full user journeys are left to the Playwright suite of batch 8.
+
+## D-019 — Batch 8 (end-to-end tests) judgement calls
+*2026-10-26*
+
+- **Real stack, no mocks.** Playwright drives the Vite dev server and the API started with `tsx` against the compose Postgres and Mailpit; mails are read through Mailpit's REST API (`/api/v1/search`, `/api/v1/message/:id`) so every one-time link (verify, reset, magic, invitation) is exercised exactly as a user would. The API runs with an explicit, hermetic environment (`e2e/support/env.ts`), never with the developer's `.env`; rate limits are lifted for the run.
+- **One worker, serial specs, fresh database.** `global-setup.ts` runs `reset.ts` (drop → migrate → seed) and purges Mailpit once per run; specs that mutate shared state (role changes, registration mode) run serially. This trades parallel speed (~1.3 min total) for determinism.
+- **CI image mode.** `E2E_BASE_URL` (+ `E2E_MAILPIT_URL`) points the same suite at an already running stack — batch 9 runs it against the production image from compose, so the shipped artefact is what gets tested.
+- **Root `typecheck` now also compiles `playwright.config.ts` and `e2e/**`** (`tsc -p tsconfig.json`), as the per-package `tsc` runs do not see root files.
+- **Bugs the suite caught in batch 7 code, fixed here:** (1) `ModalsProvider` sat above `QueryClientProvider`, so modal contents using queries (the sudo prompt) crashed with "No QueryClient set" — provider order swapped in `main.tsx` and the test renderer; (2) the experience/education edit forms spread the whole DTO (incl. `id`) into the form values, which the strict input schema rejected silently — forms now map only the editable fields, and ticking "Current position?" clears the end date; (3) toasts of the keyed server-state forms (settings, notification preferences) were skipped because the component remounted before the per-mutate callback ran — they now toast from `mutateAsync`.
