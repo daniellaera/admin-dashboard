@@ -1,7 +1,7 @@
 # Production stack (ADR-010, D-016): the published image + PostgreSQL, data on bind mounts,
 # pulled every few minutes by a systemd timer — see docs/modernize/DEPLOY.md.
 #
-#   cp .env.example .env   # then set APP_URL, AUTH_SECRET, POSTGRES_PASSWORD, SMTP_*, OWNER_*
+#   write .env (mode 600) as in DEPLOY.md §2 — not a copy of .env.example, which is the dev template
 #   mkdir -p data/postgres data/uploads && chown 70:70 data/postgres && chown 1000:1000 data/uploads
 #   docker compose -f compose.prod.yml up -d
 #
