@@ -1,0 +1,7 @@
+{
+  "extends": "@devconnector/config/tsconfig/base.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["src/**/*.ts", "vitest.config.ts"]
+}

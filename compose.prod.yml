@@ -1,0 +1,59 @@
+# Production stack (ADR-010, D-016): the published image + PostgreSQL, data on bind mounts,
+# pulled every few minutes by a systemd timer — see docs/modernize/DEPLOY.md.
+#
+#   cp .env.example .env   # then set APP_URL, AUTH_SECRET, POSTGRES_PASSWORD, SMTP_*, OWNER_*
+#   mkdir -p data/postgres data/uploads && chown 70:70 data/postgres && chown 1000:1000 data/uploads
+#   docker compose -f compose.prod.yml up -d
+#
+# Roll back by pinning APP_TAG to a commit sha (e.g. APP_TAG=3f9c2d1…) and running `up -d` again.
+name: devconnector
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devconnector}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-devconnector}
+    volumes:
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql
+    shm_size: 256m
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-devconnector} -d ${POSTGRES_DB:-devconnector}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    security_opt:
+      - no-new-privileges:true
+    # Never published: only the app reaches the database.
+
+  app:
+    image: ghcr.io/daniellaera/admin-dashboard:${APP_TAG:-main}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-devconnector}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-devconnector}
+      TRUST_PROXY: 'true' # behind Nginx Proxy Manager (X-Forwarded-*)
+      UPLOADS_DIR: /data/uploads
+    ports:
+      - '${APP_BIND:-0.0.0.0}:${APP_PORT:-8080}:8080'
+    volumes:
+      - ${DATA_DIR:-./data}/uploads:/data/uploads
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'

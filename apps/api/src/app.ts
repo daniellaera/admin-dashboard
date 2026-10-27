@@ -1,0 +1,163 @@
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
+import { secureHeaders } from 'hono/secure-headers';
+import { csrfProtection } from './lib/csrf.ts';
+import { errorHandler, notFoundHandler, PayloadTooLargeError } from './lib/errors.ts';
+import { createMemoryEventBus } from './lib/events.ts';
+import { createRateLimiter, rateLimit } from './lib/rate-limit.ts';
+import { requestContext } from './lib/request-context.ts';
+import { spaRoutes } from './lib/spa.ts';
+import { createLocalStorage } from './lib/storage.ts';
+import { adminRoutes } from './modules/admin/routes.ts';
+import { createAdminService } from './modules/admin/service.ts';
+import { createAuditService } from './modules/audit/service.ts';
+import { createGitHubClient } from './modules/auth/github.ts';
+import { sessionMiddleware } from './modules/auth/middleware.ts';
+import { authRoutes } from './modules/auth/routes.ts';
+import { createAuthService } from './modules/auth/service.ts';
+import { createSessionService } from './modules/auth/session.ts';
+import { catalogRoutes } from './modules/catalog/routes.ts';
+import { createCatalogService } from './modules/catalog/service.ts';
+import { configRoutes } from './modules/config/routes.ts';
+import { createCvService } from './modules/cv/service.ts';
+import { eventRoutes } from './modules/events/routes.ts';
+import { avatarRoutes, fileRoutes } from './modules/files/routes.ts';
+import { createFilesService } from './modules/files/service.ts';
+import { healthRoutes } from './modules/health/routes.ts';
+import { createInvitationsService } from './modules/invitations/service.ts';
+import { meRoutes } from './modules/me/routes.ts';
+import { notificationRoutes } from './modules/notifications/routes.ts';
+import { createNotificationsService } from './modules/notifications/service.ts';
+import { commentsRoutes, postsRoutes } from './modules/posts/routes.ts';
+import { createPostsService } from './modules/posts/service.ts';
+import { profilesRoutes } from './modules/profiles/routes.ts';
+import { createProfilesService } from './modules/profiles/service.ts';
+import { createSettingsService } from './modules/settings/service.ts';
+import type { AppDeps, AppEnv } from './types.ts';
+
+export const API_PREFIX = '/api/v1';
+const JSON_BODY_LIMIT = 256 * 1024;
+
+/**
+ * Builds the HTTP application. Pure function of its dependencies so tests can construct it
+ * with an in-memory logger and a test database; `server.ts` wires the real ones.
+ */
+export function createApp(deps: AppDeps) {
+  const { env, logger, db } = deps;
+  const events = deps.events ?? createMemoryEventBus();
+  const storage = deps.storage ?? createLocalStorage(env.UPLOADS_DIR);
+  const maxUploadBytes = Math.round(env.MAX_UPLOAD_MB * 1_048_576);
+
+  const audit = createAuditService(db);
+  const settings = createSettingsService(db, audit);
+  const catalog = createCatalogService(db);
+  const sessions = createSessionService(db, env);
+  const invitations = createInvitationsService({ db, env, audit });
+  const files = createFilesService({ db, storage, maxUploadBytes, log: logger });
+  const auth = createAuthService({
+    db,
+    env,
+    sessions,
+    settings,
+    invitations,
+    audit,
+    log: logger,
+    onAccountDeleted: (userId) => files.deleteAllFor(userId),
+  });
+  const github = createGitHubClient(env, deps.fetchImpl);
+  const profiles = createProfilesService(db, catalog);
+  const cv = createCvService(db);
+  const notifications = createNotificationsService({ db, env, events, log: logger });
+  const posts = createPostsService({
+    db,
+    events,
+    catalog,
+    log: logger,
+    hooks: notifications.hooks,
+  });
+  const admin = createAdminService({
+    db,
+    log: logger,
+    audit,
+    invitations,
+    applyRole: auth.applyRole,
+    onUserDeleted: (userId) => files.deleteAllFor(userId),
+  });
+  const apiLimiter = createRateLimiter({ windowMs: 60_000, max: env.RATE_LIMIT_API_PER_MINUTE });
+
+  // JSON bodies are small; the avatar upload has its own, larger limit on its route.
+  const jsonLimit = bodyLimit({
+    maxSize: JSON_BODY_LIMIT,
+    onError: () => {
+      throw new PayloadTooLargeError('Request body too large');
+    },
+  });
+
+  const api = new Hono<AppEnv>()
+    .use(rateLimit(apiLimiter))
+    .use(async (c, next) => {
+      if (c.req.path === `${API_PREFIX}/me/avatar`) return next();
+      return jsonLimit(c, next);
+    })
+    .use(sessionMiddleware(sessions))
+    .route(
+      '/',
+      healthRoutes({
+        ...deps,
+        readiness: { ...deps.readiness, uploads: () => storage.ensureWritable() },
+      }),
+    )
+    .route('/', configRoutes(env, settings))
+    .route('/catalog', catalogRoutes(catalog))
+    .route('/auth', authRoutes({ env, auth, invitations, github }))
+    .route('/me/avatar', avatarRoutes(files, maxUploadBytes))
+    .route('/me', meRoutes({ profiles, cv, posts }))
+    .route('/profiles', profilesRoutes(profiles))
+    .route('/posts', postsRoutes(posts))
+    .route('/comments', commentsRoutes(posts))
+    .route('/notifications', notificationRoutes(notifications))
+    .route('/events', eventRoutes(events, deps.sseHeartbeatMs))
+    .route('/admin', adminRoutes({ admin, invitations, settings, audit, catalog }));
+
+  const app = new Hono<AppEnv>()
+    .use(async (c, next) => {
+      c.set('trustProxy', env.TRUST_PROXY);
+      await next();
+    })
+    .use(requestContext(logger))
+    .use(
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          fontSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          objectSrc: ["'none'"],
+        },
+        referrerPolicy: 'strict-origin-when-cross-origin',
+        crossOriginEmbedderPolicy: false,
+        strictTransportSecurity: env.cookieSecure ? 'max-age=31536000; includeSubDomains' : false,
+        permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+      }),
+    )
+    // Rejects state-changing requests that a browser sent from another site (lib/csrf.ts).
+    .use(`${API_PREFIX}/*`, csrfProtection(env.appOrigin))
+    .route(API_PREFIX, api)
+    .route('/files', fileRoutes(files));
+
+  // Production image: the built SPA is served by the same process (ADR-010). Registered last so
+  // API and file routes always win; its own 404s fall back to index.html.
+  if (env.WEB_DIST) app.route('/', spaRoutes(env.WEB_DIST, [API_PREFIX, '/files']));
+
+  app.notFound(notFoundHandler).onError(errorHandler);
+  return app;
+}
+
+export type App = ReturnType<typeof createApp>;
+/** Route typing for `hono/client` consumers. */
+export type AppType = App;

@@ -1,0 +1,34 @@
+# gitleaks configuration — run in CI over the full history (.github/workflows/ci.yml, job "security").
+# Extends the default ruleset and adds the pattern that the default rules missed
+# in this repository's history (a Postgres URI with an embedded password).
+title = "devconnector"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "postgres-uri-with-password"
+description = "PostgreSQL connection string with an embedded password"
+regex = '''postgres(?:ql)?://[A-Za-z0-9._%+-]+:([^@\s'"`]{4,})@[A-Za-z0-9.-]+'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+
+[rules.allowlist]
+# Local-only placeholders used in docs, compose files, CI and tests (matched on the whole line).
+regexTarget = "line"
+regexes = [
+  '''postgres(?:ql)?://[^:/\s]+:(postgres|devconnector|password|changeme|test|secret|legacy|pass|<password>|\*\*\*)@''',
+]
+
+[allowlist]
+description = "Known locations: documentation that references the historical leak by location only, and the commit that introduced it"
+paths = [
+  '''docs/modernize/appendix/secret-scan\.md''',
+  '''docs/modernize/AUDIT\.md''',
+  '''docs/modernize/REPORT\.md''',
+  '''pnpm-lock\.yaml''',
+]
+# 2023-02-19 "first commit" on main: backend/README.md contains the Supabase database password.
+# It is documented in docs/modernize/appendix/secret-scan.md (S-1) and REPORT.md and MUST be rotated;
+# the commit is allowlisted only so the history scan can gate new leaks. Remove after rotation + history rewrite, if ever.
+commits = ["161af4b51c6411c3d8c0a81fadc82921b8880429"]

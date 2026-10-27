@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+pnpm-lock.yaml
+apps/web/src/routeTree.gen.ts
+apps/api/drizzle
+docs/
+playwright-report
+test-results
+LICENSE

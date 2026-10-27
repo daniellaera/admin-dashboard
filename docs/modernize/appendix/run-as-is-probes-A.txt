@@ -1,0 +1,175 @@
+===== PROBES [A] against http://127.0.0.1:18080  (Mon Oct 26 17:41:36 CET 2026) =====
+### GET /
+$ curl -X GET http://127.0.0.1:18080/ 
+status=200
+body[0:300]: {"message":"🦄🌈✨👋🌎🌍🌏✨🌈🦄"}
+
+### GET /api/v1
+$ curl -X GET http://127.0.0.1:18080/api/v1 
+status=200
+body[0:300]: {"message":"API - 👋🌎🌍🌏"}
+
+### GET /api/v1/emojis
+$ curl -X GET http://127.0.0.1:18080/api/v1/emojis 
+status=200
+body[0:300]: ["😀","😳","🙄"]
+
+### GET /api/v1/posts
+$ curl -X GET http://127.0.0.1:18080/api/v1/posts 
+status=200
+body[0:300]: [{"id":6,"createdAt":"2026-10-26T16:37:36.327Z","updatedAt":"2026-10-26T16:37:36.327Z","type":"FUNNY","title":"Ask a question about Prisma on GitHub","content":"https://www.github.com/prisma/prisma/discussions","published":true,"viewCount":128,"profileId":4,"profile":{"username":"Randy Smith","autho
+
+### GET /api/v1/profile
+$ curl -X GET http://127.0.0.1:18080/api/v1/profile 
+status=200
+body[0:300]: [{"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:37:36.311Z","avatarUrl":null,"username":"Hulk Green","website":null,"company":null,"bio":null,"authorEmail":"hulk@marvel.com","isPublic":false,"programmingLanguages":[]},{"id":2,"createdAt":"2026-10-26T16:37:36.322Z","updated
+
+### GET /api/v1/experience
+$ curl -X GET http://127.0.0.1:18080/api/v1/experience 
+status=200
+body[0:300]: []
+
+### GET /api/v1/education
+$ curl -X GET http://127.0.0.1:18080/api/v1/education 
+status=200
+body[0:300]: []
+
+### GET /api/v1/profile/findProfileByEmail/hulk@marvel.com
+$ curl -X GET http://127.0.0.1:18080/api/v1/profile/findProfileByEmail/hulk@marvel.com 
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:37:36.311Z","avatarUrl":null,"username":"Hulk Green","website":null,"company":null,"bio":null,"authorEmail":"hulk@marvel.com","isPublic":false,"experiences":[],"programmingLanguages":[]}
+
+### GET /api/v1/posts/post/1
+$ curl -X GET http://127.0.0.1:18080/api/v1/posts/post/1 
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:37:36.311Z","type":"FUNNY","title":"Where does it come from?","content":"ype specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was p","pu
+
+### GET /api/v1/posts/post/abc (non-numeric id)
+$ curl -X GET http://127.0.0.1:18080/api/v1/posts/post/abc 
+status=200
+body[0:300]: {"error":"Post with ID abc does not exist in the database"}
+
+### POST /api/v1/posts/create NO auth
+$ curl -X POST http://127.0.0.1:18080/api/v1/posts/create -H Content-Type:application/json --data {"title":"x","content":"y","type":"TECH","published":true,"profileId":1,"tags":[]}
+status=401
+body[0:300]: {"msg":"No token, auth denied!"}
+
+### POST /api/v1/posts/create Bearer not-a-jwt
+$ curl -X POST http://127.0.0.1:18080/api/v1/posts/create -H Content-Type:application/json -H Authorization: Bearer not-a-jwt --data {"title":"x","content":"y","type":"TECH","published":true,"profileId":1,"tags":[]}
+status=400
+body[0:300]: {"error":"Invalid token, auth denied!"}
+
+### POST /api/v1/comments/create NO auth
+$ curl -X POST http://127.0.0.1:18080/api/v1/comments/create -H Content-Type:application/json --data {"text":"hi","profileId":1,"postId":1}
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:41:36.404Z","text":"hi","postId":1,"profileId":1}
+
+### GET /api/v1/comments/commentsByPostId/1
+$ curl -X GET http://127.0.0.1:18080/api/v1/comments/commentsByPostId/1 
+status=200
+body[0:300]: [{"id":1,"createdAt":"2026-10-26T16:41:36.404Z","text":"hi","postId":1,"profileId":1,"profile":{"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:37:36.311Z","avatarUrl":null,"username":"Hulk Green","website":null,"company":null,"bio":null,"authorEmail":"hulk@marvel.com","isPu
+
+### POST /api/v1/likes/create NO auth (1st)
+$ curl -X POST http://127.0.0.1:18080/api/v1/likes/create -H Content-Type:application/json --data {"profileId":1,"postId":1}
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:41:36.438Z","postId":1,"profileId":1}
+
+### POST /api/v1/likes/create NO auth (2nd)
+$ curl -X POST http://127.0.0.1:18080/api/v1/likes/create -H Content-Type:application/json --data {"profileId":1,"postId":1}
+status=400
+body[0:300]: {"error":"You cannot like a post twice"}
+
+### PUT /api/v1/posts/updateById/1 NO auth (title=HACKED)
+$ curl -X PUT http://127.0.0.1:18080/api/v1/posts/updateById/1 -H Content-Type:application/json --data {"title":"HACKED","content":"c","type":"TECH","published":true,"tags":[]}
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:41:36.468Z","type":"TECH","title":"HACKED","content":"c","published":true,"viewCount":0,"profileId":1}
+
+### GET /api/v1/posts/post/1 (after PUT)
+$ curl -X GET http://127.0.0.1:18080/api/v1/posts/post/1 
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:41:36.468Z","type":"TECH","title":"HACKED","content":"c","published":true,"viewCount":0,"profileId":1,"profile":{"id":1,"username":"Hulk Green","authorEmail":"hulk@marvel.com","avatarUrl":null},"comments":[{"id":1,"createdAt":
+
+### PUT /api/v1/profile/updateById/1 NO auth (username=owned)
+$ curl -X PUT http://127.0.0.1:18080/api/v1/profile/updateById/1 -H Content-Type:application/json --data {"username":"owned","programmingLanguages":[]}
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:41:36.501Z","avatarUrl":null,"username":"owned","website":null,"company":null,"bio":null,"authorEmail":"hulk@marvel.com","isPublic":false}
+
+### GET /api/v1/profile/findProfileByEmail/hulk@marvel.com (after PUT)
+$ curl -X GET http://127.0.0.1:18080/api/v1/profile/findProfileByEmail/hulk@marvel.com 
+status=200
+body[0:300]: {"id":1,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:41:36.501Z","avatarUrl":null,"username":"owned","website":null,"company":null,"bio":null,"authorEmail":"hulk@marvel.com","isPublic":false,"experiences":[],"programmingLanguages":[]}
+
+### DELETE /api/v1/posts/deleteById/2 NO auth
+$ curl -X DELETE http://127.0.0.1:18080/api/v1/posts/deleteById/2 
+status=200
+body[0:300]: {"id":2,"createdAt":"2026-10-26T16:37:36.311Z","updatedAt":"2026-10-26T16:37:36.311Z","type":"FUNNY","title":"Why do we use it?","content":"ey College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in class
+
+### GET /api/v1/posts/post/2 (after DELETE)
+$ curl -X GET http://127.0.0.1:18080/api/v1/posts/post/2 
+status=200
+body[0:300]: null
+
+### POST /api/v1/comments/create MALFORMED JSON
+$ curl -X POST http://127.0.0.1:18080/api/v1/comments/create -H Content-Type:application/json --data {"text":
+status=500
+body[0:300]: {"message":"Unexpected end of JSON input","stack":"SyntaxError: Unexpected end of JSON input\n    at JSON.parse (<anonymous>)\n    at parse (/private/tmp/claude-501/-Users-daniellaera-dev-git-repos-test-dashboard/4107091c-cf07-44b4-b67f-b25fe04ab89a/scratchpad/head-main/backend/node_modules/body-par
+STACK TRACE IN BODY: yes
+
+### GET /api/v1/doesnotexist
+$ curl -X GET http://127.0.0.1:18080/api/v1/doesnotexist 
+status=404
+body[0:300]: {"message":"🔍 - Not Found - /api/v1/doesnotexist","stack":"Error: 🔍 - Not Found - /api/v1/doesnotexist\n    at notFound (/private/tmp/claude-501/-Users-daniellaera-dev-git-repos-test-dashboard/4107091c-cf07-44b4-b67f-b25fe04ab89a/scratchpad/head-main/backend/src/middleware/middlewares.ts:7:17)
+STACK TRACE IN BODY: yes
+
+### OPTIONS /api/v1/posts with Origin: https://evil.example (response headers)
+HTTP/1.1 204 No Content
+Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+X-DNS-Prefetch-Control: off
+X-Frame-Options: SAMEORIGIN
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Origin-Agent-Cluster: ?1
+X-Permitted-Cross-Domain-Policies: none
+Referrer-Policy: no-referrer
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE
+Vary: Access-Control-Request-Headers
+Access-Control-Allow-Headers: content-type
+Content-Length: 0
+Date: Mon, 26 Oct 2026 16:41:36 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+### GET / response headers
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+X-DNS-Prefetch-Control: off
+X-Frame-Options: SAMEORIGIN
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+X-Download-Options: noopen
+X-Content-Type-Options: nosniff
+Origin-Agent-Cluster: ?1
+X-Permitted-Cross-Domain-Policies: none
+Referrer-Policy: no-referrer
+X-XSS-Protection: 0
+Access-Control-Allow-Origin: *
+Content-Type: application/json; charset=utf-8
+Content-Length: 52
+ETag: W/"34-5cAI58fgYXx6IYelfzP4e82jrTU"
+Date: Mon, 26 Oct 2026 16:41:36 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+### GET / with Origin: https://evil.example -> Access-Control-Allow-Origin
+Access-Control-Allow-Origin: *
+===== END PROBES [A] =====
